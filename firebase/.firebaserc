@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "umkmkitsstudio"
+  },
+  "targets": {
+    "umkmkitsstudio": {
+      "hosting": {
+        "web": ["umkmkitsstudio-web"]
+      }
+    }
+  }
+}

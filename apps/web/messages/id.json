@@ -1,0 +1,22 @@
+{
+  "common": {
+    "cta": "Mulai sekarang",
+    "heroTitle": "Studio kreatif untuk UMKM kuliner",
+    "heroSubtitle": "Bangun identitas visual menarik dengan template tradisional modern dan caption AI dalam hitungan detik.",
+    "dashboard": "Dasbor",
+    "gallery": "Galeri",
+    "editor": "Editor",
+    "credits": "Kredit",
+    "generateCaption": "Buat Caption"
+  },
+  "auth": {
+    "signIn": "Masuk",
+    "signUp": "Daftar",
+    "onboarding": "Selamat datang! Mari lengkapi profil Anda." 
+  },
+  "dashboard": {
+    "welcome": "Selamat datang kembali",
+    "upload": "Unggah foto produk Anda",
+    "recentJobs": "Riwayat Job AI"
+  }
+}

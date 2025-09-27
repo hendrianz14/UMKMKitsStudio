@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-sand text-charcoal antialiased;
+}
+
+a {
+  @apply text-cacao underline-offset-4 hover:underline;
+}
+
+.glass-sheen {
+  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}

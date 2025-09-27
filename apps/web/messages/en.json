@@ -1,0 +1,22 @@
+{
+  "common": {
+    "cta": "Get started",
+    "heroTitle": "Creative studio for culinary MSMEs",
+    "heroSubtitle": "Craft striking visuals with modern-traditional templates and AI captions in seconds.",
+    "dashboard": "Dashboard",
+    "gallery": "Gallery",
+    "editor": "Editor",
+    "credits": "Credits",
+    "generateCaption": "Generate Caption"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "onboarding": "Welcome! Let’s complete your profile."
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "upload": "Upload your product photo",
+    "recentJobs": "Recent AI jobs"
+  }
+}

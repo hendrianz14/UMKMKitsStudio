@@ -1,0 +1,13 @@
+node_modules
+.env.local
+.env
+*.log
+apps/web/.next
+apps/web/out
+apps/web/.vercel
+services/functions/dist
+firebase-debug.log
+firebase/.firebase
+coverage
+.vitest
+artifacts

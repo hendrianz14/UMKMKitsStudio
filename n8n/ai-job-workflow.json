@@ -1,0 +1,43 @@
+{
+  "name": "UMKM Caption Job",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-job",
+        "options": {
+          "responseData": "{\"status\":\"queued\"}"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [260, 300],
+      "webhookId": "ai-job"
+    },
+    {
+      "parameters": {
+        "authentication": "none",
+        "requestMethod": "POST",
+        "url": "={{$json[\"callbackUrl\"]}}",
+        "jsonParameters": true,
+        "options": {
+          "headers": {
+            "entries": [
+              {
+                "name": "X-Callback-Token",
+                "value": "={{$env.N8N_CALLBACK_SECRET}}"
+              }
+            ]
+          }
+        },
+        "bodyParametersJson": "={\n  \"jobId\": $json.jobId,\n  \"status\": \"succeeded\",\n  \"resultUrl\": $json.resultUrl,\n  \"meta\": $json.meta\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [740, 300]
+    }
+  ],
+  "connections": {
+    "UMKM Caption Job Start": {}
+  }
+}

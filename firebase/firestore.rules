@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function authed() { return request.auth != null; }
+    function isOwner(uid) { return authed() && request.auth.uid == uid; }
+
+    match /users/{uid} {
+      allow read, update, create: if isOwner(uid);
+    }
+
+    match /assets/{id} {
+      allow create: if authed() && request.resource.data.ownerUid == request.auth.uid;
+      allow read: if authed() && resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if authed() && resource.data.ownerUid == request.auth.uid;
+    }
+
+    match /jobs/{id} {
+      allow read: if authed() && resource.data.ownerUid == request.auth.uid;
+      allow create: if authed() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /transactions/{id} {
+      allow read: if authed() && resource.data.ownerUid == request.auth.uid;
+      allow create: if authed() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}
