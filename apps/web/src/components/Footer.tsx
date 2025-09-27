@@ -7,12 +7,14 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { toast } from './ui/toast';
 
+
 type FooterLink = {
   label: string;
   href: string;
 };
 
 const columns: Array<{ title: string; links: FooterLink[] }> = [
+
   {
     title: 'Produk',
     links: [
@@ -87,6 +89,7 @@ export function Footer() {
             <div key={column.title} className="space-y-4">
               <h4 className="text-sm font-semibold uppercase tracking-widest text-white/80">{column.title}</h4>
               <ul className="space-y-2 text-sm text-[var(--text-muted)]">
+
                 {column.links.map((link) => {
                   const isExternal = /^https?:\/\//.test(link.href);
                   const isMail = link.href.startsWith('mailto:');
@@ -109,6 +112,7 @@ export function Footer() {
                     </li>
                   );
                 })}
+
               </ul>
             </div>
           ))}
