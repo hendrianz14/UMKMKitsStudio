@@ -1,11 +1,13 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let storage: FirebaseStorage | null = null;
+let firestore: Firestore | null = null;
 let analyticsPromise: Promise<Analytics | null> | null = null;
 
 const requiredEnv = [
@@ -58,6 +60,15 @@ export function getFirebaseStorage(): FirebaseStorage | null {
     storage = getStorage(firebaseApp);
   }
   return storage;
+}
+
+export function getFirebaseFirestore(): Firestore | null {
+  const firebaseApp = ensureApp();
+  if (!firebaseApp) return null;
+  if (!firestore) {
+    firestore = getFirestore(firebaseApp);
+  }
+  return firestore;
 }
 
 export async function getFirebaseAnalytics(): Promise<Analytics | null> {

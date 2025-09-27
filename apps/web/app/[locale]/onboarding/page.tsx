@@ -23,14 +23,14 @@ export default function OnboardingPage() {
             <div className="mt-3 flex gap-3">
               <Button
                 type="button"
-                variant={language === 'id' ? 'primary' : 'secondary'}
+                variant={language === 'id' ? 'default' : 'secondary'}
                 onClick={() => setLanguage('id')}
               >
                 Bahasa Indonesia
               </Button>
               <Button
                 type="button"
-                variant={language === 'en' ? 'primary' : 'secondary'}
+                variant={language === 'en' ? 'default' : 'secondary'}
                 onClick={() => setLanguage('en')}
               >
                 English

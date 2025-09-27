@@ -77,7 +77,7 @@ export default function DashboardPage() {
           <div className="rounded-3xl border border-cacao/10 bg-white/80 p-6 shadow-soft">
             <h2 className="text-xl font-semibold text-charcoal">Aksi cepat</h2>
             <div className="mt-4 flex flex-wrap gap-3">
-              <Button variant="primary">Buat caption</Button>
+              <Button variant="default">Buat caption</Button>
               <Button variant="secondary">Top up kredit</Button>
               <Button variant="secondary">Lihat galeri</Button>
             </div>
