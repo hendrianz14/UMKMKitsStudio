@@ -8,7 +8,7 @@ export function JobStatusToast() {
   const {
     state: { jobs }
   } = useEditor();
-  const toastMap = useRef(new Map<string, string>());
+  const toastMap = useRef(new Map<string, string | number>());
 
   useEffect(() => {
     jobs.forEach((job) => {

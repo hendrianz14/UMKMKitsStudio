@@ -61,7 +61,10 @@ export function Navbar({ locale = 'id', showSections = true }: { locale?: string
       className="fixed inset-x-0 top-0 z-50 border-b border-white/10"
     >
       <div className="container flex h-16 items-center justify-between gap-4">
-        <Link href={pathname?.startsWith('/dashboard') ? pathname : `/${locale}`} className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+        <Link
+          href={(pathname?.startsWith('/dashboard') ? pathname : `/${locale}`) as never}
+          className="flex items-center gap-2 text-sm font-semibold tracking-tight"
+        >
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-accent text-white shadow-lg shadow-blue-600/40">
             <Sparkles className="h-4 w-4" />
           </span>
@@ -126,7 +129,7 @@ export function Navbar({ locale = 'id', showSections = true }: { locale?: string
                         onClick={() => setSheetOpen(false)}
                         asChild
                       >
-                        <Link href={`#${item.id}`}>{item.label}</Link>
+                        <Link href={`#${item.id}` as never}>{item.label}</Link>
                       </Button>
                     ))
                   : null}
