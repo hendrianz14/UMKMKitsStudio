@@ -84,7 +84,7 @@ export function Footer() {
               <ul className="space-y-2 text-sm text-[var(--text-muted)]">
                 {column.links.map((link) => (
                   <li key={link.label}>
-                    <Link className="transition hover:text-white" href={link.href}>
+                    <Link className="transition hover:text-white" href={link.href as never}>
                       {link.label}
                     </Link>
                   </li>

@@ -186,7 +186,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       const { id, updates } = action.payload as { id: string; updates: Partial<Layer> };
       return {
         ...state,
-        layers: state.layers.map((layer) => (layer.id === id ? { ...layer, ...updates } : layer))
+        layers: state.layers.map((layer) => (layer.id === id ? ({ ...layer, ...updates } as Layer) : layer))
       };
     }
     case 'add-layer': {
@@ -231,13 +231,15 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       return { ...state, panMode: action.payload as boolean };
     case 'set-layers':
       return { ...state, layers: action.payload as Layer[] };
-    case 'apply-template':
+    case 'apply-template': {
+      const template = action.payload as { background: string; layers: Layer[] };
       return {
         ...state,
-        canvas: { ...state.canvas, background: action.payload.background },
-        layers: action.payload.layers,
-        activeLayerId: action.payload.layers[0]?.id ?? null
+        canvas: { ...state.canvas, background: template.background },
+        layers: template.layers,
+        activeLayerId: template.layers[0]?.id ?? null
       };
+    }
     case 'job-upsert': {
       const job = action.payload as EditorJob;
       const existingIndex = state.jobs.findIndex((item) => item.id === job.id);
@@ -256,7 +258,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
 export interface EditorStore {
   state: EditorState;
   presets: CanvasPreset[];
-  artboardRef: RefObject<HTMLDivElement>;
+  artboardRef: RefObject<HTMLDivElement | null>;
   actions: {
     setActiveLayer: (id: string) => void;
     updateLayer: (id: string, updates: Partial<Layer>) => void;
@@ -279,7 +281,7 @@ const EditorContext = createContext<EditorStore | null>(null);
 
 export function EditorProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(editorReducer, initialState);
-  const artboardRef = useRef<HTMLDivElement>(null);
+  const artboardRef = useRef<HTMLDivElement | null>(null);
 
   const store = useMemo<EditorStore>(() => {
     return {
