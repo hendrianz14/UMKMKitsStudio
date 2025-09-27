@@ -1,0 +1,4 @@
+registry=https://registry.npmjs.org/
+verify-store-integrity=false
+auto-install-peers=true
+resolution-mode=highest

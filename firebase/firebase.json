@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "source": "../services/functions"
+  },
+  "hosting": [
+    {
+      "target": "web",
+      "public": "../apps/web/out",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ]
+    }
+  ]
+}

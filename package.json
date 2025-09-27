@@ -1,0 +1,16 @@
+{
+  "name": "umkmkitsstudio",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.12.2",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev:web": "pnpm -C apps/web dev",
+    "build:web": "pnpm -C apps/web build",
+    "build:functions": "pnpm -C services/functions build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint"
+  }
+}
