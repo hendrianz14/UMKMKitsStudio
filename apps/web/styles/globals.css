@@ -3,19 +3,84 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: dark;
+  --background: #0b0f1a;
+  --surface: #0f172a;
+  --text-primary: #e2e8f0;
+  --text-muted: rgba(226, 232, 240, 0.64);
+  --primary: #3b82f6;
+  --primary-foreground: #0b1220;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --shadow-soft: 0 30px 80px -40px rgba(59, 130, 246, 0.45);
+  scroll-behavior: smooth;
+}
+
+[data-theme='light'] {
   color-scheme: light;
+  --background: #ffffff;
+  --surface: #f8fafc;
+  --text-primary: #0f172a;
+  --text-muted: rgba(15, 23, 42, 0.68);
+  --primary: #3b82f6;
+  --primary-foreground: #f8fafc;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
+}
+
+* {
+  @apply border-border;
 }
 
 body {
-  @apply bg-sand text-charcoal antialiased;
+  @apply bg-[var(--background)] text-[var(--text-primary)] antialiased;
 }
 
 a {
-  @apply text-cacao underline-offset-4 hover:underline;
+  @apply underline-offset-4 transition-colors duration-200 hover:text-primary;
 }
 
-.glass-sheen {
-  backdrop-filter: blur(18px);
-  background: rgba(255, 255, 255, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+::selection {
+  background: rgba(99, 102, 241, 0.35);
+  color: #f8fafc;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.85);
+  outline-offset: 3px;
+}
+
+@layer utilities {
+  .bg-gradient-accent {
+    background-image: linear-gradient(135deg, #3b82f6 0%, #6366f1 45%, #8b5cf6 100%);
+  }
+
+  .ring-accent {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4), 0 0 0 6px rgba(99, 102, 241, 0.18);
+  }
+
+  .smooth-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+  }
+
+  .smooth-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .smooth-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.45);
+    border-radius: 9999px;
+  }
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans), 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
 }
