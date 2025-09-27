@@ -10,6 +10,9 @@ import { SectionHeading } from '../../src/components/SectionHeading';
 import { Button } from '../../src/components/ui/button';
 import { defaultLocale } from '../../lib/i18n';
 
+
+export const dynamic = 'force-dynamic';
+
 export default function MarketingPage() {
   const locale = defaultLocale;
 
@@ -34,10 +37,12 @@ export default function MarketingPage() {
                 <Link href={`/${locale}/sign-up`}>Coba Gratis Sekarang</Link>
               </Button>
               <Button size="lg" variant="secondary" asChild>
-                <Link href="#editor-demo">
+
+                <a href="#editor-demo">
                   Lihat Editor
                   <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+                </a>
+
               </Button>
               <p className="text-sm text-[var(--text-muted)]">Tidak perlu kartu kredit • 3 menit onboarding</p>
             </div>

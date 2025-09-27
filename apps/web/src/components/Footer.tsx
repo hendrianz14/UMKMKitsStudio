@@ -7,7 +7,14 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { toast } from './ui/toast';
 
-const columns = [
+
+type FooterLink = {
+  label: string;
+  href: string;
+};
+
+const columns: Array<{ title: string; links: FooterLink[] }> = [
+
   {
     title: 'Produk',
     links: [
@@ -82,13 +89,30 @@ export function Footer() {
             <div key={column.title} className="space-y-4">
               <h4 className="text-sm font-semibold uppercase tracking-widest text-white/80">{column.title}</h4>
               <ul className="space-y-2 text-sm text-[var(--text-muted)]">
-                {column.links.map((link) => (
-                  <li key={link.label}>
-                    <Link className="transition hover:text-white" href={link.href}>
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
+
+                {column.links.map((link) => {
+                  const isExternal = /^https?:\/\//.test(link.href);
+                  const isMail = link.href.startsWith('mailto:');
+                  return (
+                    <li key={link.label}>
+                      {isExternal || isMail ? (
+                        <a
+                          className="transition hover:text-white"
+                          href={link.href}
+                          target={isExternal ? '_blank' : undefined}
+                          rel={isExternal ? 'noreferrer noopener' : undefined}
+                        >
+                          {link.label}
+                        </a>
+                      ) : (
+                        <a className="transition hover:text-white" href={link.href}>
+                          {link.label}
+                        </a>
+                      )}
+                    </li>
+                  );
+                })}
+
               </ul>
             </div>
           ))}

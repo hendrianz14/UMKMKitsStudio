@@ -41,7 +41,10 @@ export function LayersPanel() {
       </header>
       <div className="space-y-3">
         {layers.map((layer, index) => {
-          const textLayer = isTextLayer(layer);
+
+          const isText = isTextLayer(layer);
+          const textLayer = isText ? layer : null;
+
           const isActive = layer.id === activeLayerId;
 
           return (

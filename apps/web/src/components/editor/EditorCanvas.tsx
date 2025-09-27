@@ -186,7 +186,13 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       const { id, updates } = action.payload as { id: string; updates: Partial<Layer> };
       return {
         ...state,
-        layers: state.layers.map((layer) => (layer.id === id ? { ...layer, ...updates } : layer))
+
+        layers: state.layers.map((layer) => {
+          if (layer.id !== id) return layer;
+          const nextLayer = { ...layer, ...updates } as Layer;
+          return nextLayer;
+        })
+
       };
     }
     case 'add-layer': {
@@ -256,7 +262,9 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
 export interface EditorStore {
   state: EditorState;
   presets: CanvasPreset[];
-  artboardRef: RefObject<HTMLDivElement>;
+
+  artboardRef: RefObject<HTMLDivElement | null>;
+
   actions: {
     setActiveLayer: (id: string) => void;
     updateLayer: (id: string, updates: Partial<Layer>) => void;
