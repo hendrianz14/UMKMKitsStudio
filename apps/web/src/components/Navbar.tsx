@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import type { UrlObject } from "url";
+import { isValidLocale } from "../../lib/i18n";
+import type { Locale } from "../../lib/i18n";
 import { useParams, usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Menu, Sparkles } from "lucide-react";
@@ -18,15 +21,15 @@ const NAV_SECTIONS = [
   { id: "pricing", label: "Harga" }
 ];
 
-export function Navbar({ locale = "id" }: { locale?: string }) {
+export function Navbar({ locale = "id" }: { locale?: Locale }) {
   const params = (useParams<{ locale?: string }>() ?? {}) as { locale?: string };
   const pathname = usePathname();
   const [active, setActive] = useState("hero");
   const [isSheetOpen, setSheetOpen] = useState(false);
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
-  const localeFromParams = params.locale;
-  const resolvedLocale = localeFromParams ?? locale ?? "id";
+  const localeFromParams = params.locale && isValidLocale(params.locale) ? params.locale : undefined;
+  const resolvedLocale = localeFromParams ?? locale;
   const base = localeFromParams ? `/${localeFromParams}` : "";
   const showMarketing = pathname === "/" || pathname === `${base || "/"}`;
 
@@ -55,7 +58,11 @@ export function Navbar({ locale = "id" }: { locale?: string }) {
   }, [showMarketing]);
 
   const navItems = useMemo(() => (showMarketing ? NAV_SECTIONS : []), [showMarketing]);
+  const navPathBase = base ? `${base}/` : "/";
   const dashboardPath = base ? `${base}/dashboard` : "/dashboard";
+  const brandHref: UrlObject = pathname?.startsWith(dashboardPath)
+    ? { pathname }
+    : { pathname: navPathBase };
 
   return (
     <motion.header
@@ -69,7 +76,7 @@ export function Navbar({ locale = "id" }: { locale?: string }) {
     >
       <div className="container flex h-full items-center justify-between gap-4">
         <Link
-          href={pathname?.startsWith(dashboardPath) ? pathname : (base ? `${base}/` : "/")}
+          href={brandHref}
           className="flex items-center gap-2 text-sm font-semibold tracking-tight"
         >
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-accent text-white shadow-lg shadow-blue-600/40">
@@ -79,28 +86,25 @@ export function Navbar({ locale = "id" }: { locale?: string }) {
         </Link>
         {showMarketing ? (
           <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
-            {navItems.map((item) => {
-              const target = item.id === "hero" ? `${base}/` : `${base}/#${item.id}`;
-              return (
-                <Link
-                  key={item.id}
-                  href={target}
-                  className={cn(
-                    "relative px-2 py-1 text-[var(--text-muted)] transition-colors hover:text-white",
-                    active === item.id && "text-white"
-                  )}
-                >
-                  {active === item.id && (
-                    <motion.span
-                      layoutId="navbar-active"
-                      className="absolute inset-0 -z-10 rounded-full bg-white/10"
-                      transition={{ type: 'spring', stiffness: 260, damping: 25 }}
-                    />
-                  )}
-                  {item.label}
-                </Link>
-              );
-            })}
+            {navItems.map((item) => (
+              <Link
+                key={item.id}
+                href={item.id === "hero" ? { pathname: navPathBase } : { pathname: navPathBase, hash: item.id }}
+                className={cn(
+                  "relative px-2 py-1 text-[var(--text-muted)] transition-colors hover:text-white",
+                  active === item.id && "text-white"
+                )}
+              >
+                {active === item.id && (
+                  <motion.span
+                    layoutId="navbar-active"
+                    className="absolute inset-0 -z-10 rounded-full bg-white/10"
+                    transition={{ type: "spring", stiffness: 260, damping: 25 }}
+                  />
+                )}
+                {item.label}
+              </Link>
+            ))}
           </nav>
         ) : (
           <div className="hidden md:flex" />
@@ -123,20 +127,19 @@ export function Navbar({ locale = "id" }: { locale?: string }) {
               </SheetHeader>
               <div className="mt-6 flex flex-col gap-3">
                 {showMarketing
-                  ? navItems.map((item) => {
-                      const target = item.id === 'hero' ? `${base}/` : `${base}/#${item.id}`;
-                      return (
-                        <Button
-                          key={item.id}
-                          variant={active === item.id ? 'default' : 'secondary'}
-                          className="justify-start"
-                          onClick={() => setSheetOpen(false)}
-                          asChild
-                        >
-                          <Link href={target}>{item.label}</Link>
-                        </Button>
-                      );
-                    })
+                  ? navItems.map((item) => (
+                      <Button
+                        key={item.id}
+                        variant={active === item.id ? "default" : "secondary"}
+                        className="justify-start"
+                        onClick={() => setSheetOpen(false)}
+                        asChild
+                      >
+                        <Link href={item.id === "hero" ? { pathname: navPathBase } : { pathname: navPathBase, hash: item.id }}>
+                          {item.label}
+                        </Link>
+                      </Button>
+                    ))
                   : null}
               </div>
               <AuthNav

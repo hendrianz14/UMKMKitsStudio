@@ -3,15 +3,32 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, usePathname } from "next/navigation";
-import { getClientApp } from "@/lib/firebase-client";
+import { getClientApp } from "../../../lib/firebase-client";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { cn } from "@/lib/utils";
+import { cn } from "../../../lib/utils";
+import { isValidLocale } from "../../../lib/i18n";
+import type { Locale } from "../../../lib/i18n";
+
+const DASHBOARD_ROUTES = {
+  id: "/id/dashboard",
+  en: "/en/dashboard",
+} satisfies Record<Locale, `/${Locale}/dashboard`>;
+
+const SIGN_IN_ROUTES = {
+  id: "/id/sign-in",
+  en: "/en/sign-in",
+} satisfies Record<Locale, `/${Locale}/sign-in`>;
+
+const SIGN_UP_ROUTES = {
+  id: "/id/sign-up",
+  en: "/en/sign-up",
+} satisfies Record<Locale, `/${Locale}/sign-up`>;
 
 type AuthNavProps = {
   layout?: "row" | "column";
   className?: string;
   onNavigate?: () => void;
-  fallbackLocale?: string;
+  fallbackLocale?: Locale;
 };
 
 export default function AuthNav({
@@ -24,7 +41,10 @@ export default function AuthNav({
   const app = getClientApp();
   const { locale } = (useParams<{ locale?: string }>() ?? {}) as { locale?: string };
   const pathname = usePathname();
-  const base = locale ? `/${locale}` : fallbackLocale ? `/${fallbackLocale}` : "";
+  const activeLocale = locale && isValidLocale(locale) ? (locale as Locale) : fallbackLocale;
+  const dashboardHref = activeLocale ? DASHBOARD_ROUTES[activeLocale] : "/dashboard";
+  const signInHref = activeLocale ? SIGN_IN_ROUTES[activeLocale] : "/sign-in";
+  const signUpHref = activeLocale ? SIGN_UP_ROUTES[activeLocale] : "/sign-up";
 
   useEffect(() => {
     if (!app) {
@@ -59,9 +79,9 @@ export default function AuthNav({
     <div className={cn(containerClasses, className)}>
       {isLoggedIn ? (
         <>
-          {pathname !== `${base}/dashboard` && (
+          {pathname !== dashboardHref && (
             <Link
-              href={`${base}/dashboard`}
+              href={dashboardHref}
               className={cn(actionBaseClass, "bg-card/30 border border-border hover:bg-card/50")}
               onClick={handleNavigate}
             >
@@ -78,14 +98,14 @@ export default function AuthNav({
       ) : (
         <>
           <Link
-            href={`${base}/sign-in`}
+            href={signInHref}
             className={cn(actionBaseClass, "bg-card/30 border border-border hover:bg-card/50")}
             onClick={handleNavigate}
           >
             Masuk
           </Link>
           <Link
-            href={`${base}/sign-up`}
+            href={signUpHref}
             className={cn(actionBaseClass, "bg-primary text-primary-foreground hover:bg-primary/90")}
             onClick={handleNavigate}
           >
