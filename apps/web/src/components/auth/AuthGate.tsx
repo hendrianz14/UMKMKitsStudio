@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getClientApp } from "../../../lib/firebase-client";
+import { getClientApp } from "@/lib/firebase-client";
 import { isValidLocale } from "../../../lib/i18n";
 import type { Locale } from "../../../lib/i18n";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
