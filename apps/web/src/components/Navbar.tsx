@@ -17,10 +17,10 @@ const NAV_SECTIONS = [
   { id: 'gallery', label: 'Galeri' },
   { id: 'pricing', label: 'Harga' }
 
-];
+] as const;
 
 export function Navbar({ locale = "id" }: { locale?: Locale }) {
-  const params = (useParams<{ locale?: string }>() ?? {}) as { locale?: string };
+  const basePath: `/${string}` | '/' = params?.locale ? `/${params.locale}` : '/'
   const pathname = usePathname();
 
   const params = useParams<{ locale?: string }>();
