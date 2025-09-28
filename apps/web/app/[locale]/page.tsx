@@ -1,14 +1,17 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { use } from 'react';
-import HeroInteractiveImage from '../../src/components/HeroInteractiveImage';
-import { BeforeAfterNoSSR, FeatureGridNoSSR, PricingSectionNoSSR } from '../../src/components/no-ssr';
+import {
+  BeforeAfterNoSSR,
+  FeatureGridNoSSR,
+  HeroInteractiveImageNoSSR,
+  PricingSectionNoSSR
+} from '../../src/components/no-ssr';
 import { SectionHeading } from '../../src/components/SectionHeading';
 import { Button } from '../../src/components/ui/button';
 
 export default async function LocaleLanding({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = use(params);
+  const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'common' });
 
   return (
@@ -35,7 +38,7 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
             </p>
           </div>
         </div>
-        <HeroInteractiveImage
+        <HeroInteractiveImageNoSSR
           src="https://images.unsplash.com/photo-1521986329282-0436c1b74404?auto=format&fit=crop&w=1600&q=80"
           className="w-full max-w-[720px] ml-auto"
         />

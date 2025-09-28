@@ -3,8 +3,13 @@ import { NextIntlClientProvider } from 'next-intl';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 import { unstable_setRequestLocale } from 'next-intl/server';
+import { Plus_Jakarta_Sans } from 'next/font/google';
+import { cn } from '../../lib/utils';
+import { ToasterClient } from '../../components/ToasterClient';
 import { isValidLocale, locales } from '../../lib/i18n';
 import { FooterNoSSR, NavbarNoSSR } from '../../src/components/no-ssr';
+
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
 export const dynamic = 'force-dynamic';
 
@@ -35,12 +40,22 @@ export default async function LocaleLayout({
   const messages = await import(`../../messages/${locale}.json`).then((mod) => mod.default);
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      <div className="flex min-h-dvh flex-col" data-locale={locale}>
-        <NavbarNoSSR locale={locale} showSections={false} />
-        <main className="container flex-1 pb-24 pt-28">{children}</main>
-        <FooterNoSSR />
-      </div>
-    </NextIntlClientProvider>
+    <html lang={locale} className="dark" suppressHydrationWarning>
+      <body
+        className={cn(
+          'min-h-dvh bg-background text-foreground font-sans antialiased',
+          jakarta.variable
+        )}
+      >
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <div className="flex min-h-dvh flex-col" data-locale={locale}>
+            <NavbarNoSSR locale={locale} showSections={false} />
+            <main className="container flex-1 pb-24 pt-28">{children}</main>
+            <FooterNoSSR />
+          </div>
+          <ToasterClient />
+        </NextIntlClientProvider>
+      </body>
+    </html>
   );
 }

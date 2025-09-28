@@ -8,6 +8,7 @@ type FooterComponent = typeof import('./Footer')['Footer'];
 type FeatureGridComponent = typeof import('./FeatureGrid')['FeatureGrid'];
 type BeforeAfterComponent = typeof import('./BeforeAfter')['BeforeAfter'];
 type PricingSectionComponent = typeof import('./PricingSection')['PricingSection'];
+type HeroInteractiveImageComponent = typeof import('./HeroInteractiveImage')['default'];
 
 export const NavbarNoSSR = dynamic<ComponentProps<NavbarComponent>>(
   () => import('./Navbar').then((mod) => mod.Navbar),
@@ -31,5 +32,10 @@ export const BeforeAfterNoSSR = dynamic<ComponentProps<BeforeAfterComponent>>(
 
 export const PricingSectionNoSSR = dynamic<ComponentProps<PricingSectionComponent>>(
   () => import('./PricingSection').then((mod) => mod.PricingSection),
+  { ssr: false }
+);
+
+export const HeroInteractiveImageNoSSR = dynamic<ComponentProps<HeroInteractiveImageComponent>>(
+  () => import('./HeroInteractiveImage'),
   { ssr: false }
 );
