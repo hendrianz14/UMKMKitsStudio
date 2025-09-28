@@ -18,14 +18,17 @@ const requiredEnv = [
   'NEXT_PUBLIC_FIREBASE_APP_ID'
 ] as const;
 
-function hasEnv() {
-  return requiredEnv.every((key) => Boolean(process.env[key]));
+// function hasEnv() {
+//   return requiredEnv.every((key) => Boolean(process.env[key]));
+// }
+function missingEnv() {
+  return requiredEnv.filter((key) => !process.env[key]);
 }
-
 function ensureApp(): FirebaseApp | null {
   if (!hasEnv()) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('[firebase-client] Firebase environment variables belum lengkap; inisialisasi dilewati.');
+      //console.warn('[firebase-client] Firebase environment variables belum lengkap; inisialisasi dilewati.');
+       console.error('[firebase-client] Missing ENV:', missingEnv().join(', '));
     }
     return null;
   }
@@ -90,3 +93,7 @@ export async function getFirebaseAnalytics(): Promise<Analytics | null> {
   }
   return analyticsPromise;
 }
+function hasEnv() {
+  return requiredEnv.every((key) => Boolean(process.env[key]));
+}
+
