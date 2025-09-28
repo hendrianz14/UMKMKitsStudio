@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { notFound } from 'next/navigation';
-import { ReactNode, use } from 'react';
+import { ReactNode } from 'react';
 import { unstable_setRequestLocale } from 'next-intl/server';
 import { isValidLocale, locales } from '../../lib/i18n';
 import { FooterNoSSR, NavbarNoSSR } from '../../src/components/no-ssr';
@@ -24,7 +24,7 @@ export default async function LocaleLayout({
   children: ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = use(params);
+  const { locale } = await params;
 
   if (!isValidLocale(locale)) {
     notFound();
