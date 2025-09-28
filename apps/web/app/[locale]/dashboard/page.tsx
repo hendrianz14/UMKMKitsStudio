@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { CardX, CardXHeader } from '@/components/ui/cardx';
-import { CreditBadge } from '@/components/credit-badge';
-import { UploadDropzone } from '@/components/upload-dropzone';
-import AuthGate from '@/components/auth/AuthGate';
+import { useEffect, useMemo, useState } from "react";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import { doc, onSnapshot, setDoc } from "firebase/firestore";
+
+import AuthGate from "@/components/auth/AuthGate";
+import { CreditBadge } from "@/components/credit-badge";
+import { OnboardingModal, type OnboardingAnswers } from "@/components/onboarding/OnboardingModal";
+import { Button } from "@/components/ui/button";
+import { CardX, CardXHeader } from "@/components/ui/cardx";
+import { UploadDropzone } from "@/components/upload-dropzone";
+import { getFirebaseAuth, getFirebaseFirestore } from "@/lib/firebase-client";
 
 interface JobItem {
   id: string;
@@ -26,6 +31,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const credits = 320;
+  const [user, setUser] = useState<User | null>(null);
+  const [userDoc, setUserDoc] = useState<{ onboardingCompleted?: boolean; onboarding?: OnboardingAnswers } | null>(null);
 
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_API_BASE;
@@ -50,12 +57,68 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    const auth = getFirebaseAuth();
+    if (!auth) return;
+    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
+      setUser(authUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const firestore = getFirebaseFirestore();
+    if (!firestore || !user) return;
+
+    const ref = doc(firestore, "users", user.uid);
+    const unsubscribe = onSnapshot(ref, (snapshot) => {
+      setUserDoc(snapshot.exists() ? (snapshot.data() as typeof userDoc) : null);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const handleOnboardingSave = async (answers: OnboardingAnswers) => {
+    const firestore = getFirebaseFirestore();
+    if (!firestore || !user) return;
+    await setDoc(
+      doc(firestore, "users", user.uid),
+      {
+        onboardingCompleted: true,
+        onboarding: answers,
+      },
+      { merge: true }
+    );
+  };
+
+  const handleOnboardingSkip = async () => {
+    const firestore = getFirebaseFirestore();
+    if (!firestore || !user) return;
+    await setDoc(
+      doc(firestore, "users", user.uid),
+      {
+        onboardingCompleted: true,
+      },
+      { merge: true }
+    );
+  };
+
   const spendSummary = useMemo(() => {
     return jobs.reduce((total, job) => total + (CREDIT_COST[job.kind] ?? 0), 0);
   }, [jobs]);
 
+  const shouldShowOnboarding = Boolean(
+    user && userDoc && userDoc.onboardingCompleted !== true
+  );
+
   return (
     <AuthGate>
+      <OnboardingModal
+        open={shouldShowOnboarding}
+        defaultValues={userDoc?.onboarding as OnboardingAnswers | undefined}
+        onSave={handleOnboardingSave}
+        onSkip={handleOnboardingSkip}
+      />
       <div className="space-y-10">
         <div className="space-y-4">
           <h1 className="text-3xl font-semibold text-foreground">Dasbor kreatif Anda</h1>
