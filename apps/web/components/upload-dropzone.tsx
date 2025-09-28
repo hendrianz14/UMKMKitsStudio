@@ -35,22 +35,24 @@ export function UploadDropzone({ onUpload, disabled }: UploadDropzoneProps) {
       {...getRootProps()}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
-      className="group flex cursor-pointer flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-cacao/40 bg-white/70 px-6 py-12 text-center transition hover:border-cacao hover:bg-white"
+      className="group flex cursor-pointer flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-border/60 bg-background/50 px-6 py-12 text-center transition hover:border-primary/40 hover:bg-background/70"
     >
       <input {...getInputProps()} />
-      <ImageUp className="h-10 w-10 text-accent transition group-hover:scale-110" />
+      <ImageUp className="h-10 w-10 text-primary transition group-hover:scale-110" />
       <div className="space-y-2">
-        <p className="text-lg font-semibold text-charcoal">
+        <p className="text-lg font-semibold text-foreground">
           {isDragActive ? 'Lepaskan untuk unggah' : 'Tarik & letakkan foto produk'}
         </p>
-        <p className="text-sm text-charcoal/60">
+        <p className="text-sm text-muted-foreground">
           Format gambar hingga 25MB. File akan terenkripsi sebelum dikirim ke layanan AI.
         </p>
       </div>
       <Button type="button" variant="secondary" disabled={disabled}>
         Pilih berkas
       </Button>
-      {isHovering && <span className="text-xs uppercase tracking-widest text-accent">Bisa multi upload</span>}
+      {isHovering ? (
+        <span className="text-xs uppercase tracking-widest text-primary/80">Bisa multi upload</span>
+      ) : null}
     </div>
   );
 }
