@@ -1,24 +1,29 @@
-import { defineConfig, devices } from '@playwright/test';
+import path from "node:path";
+import { defineConfig, devices } from "@playwright/test";
+
+const workspaceRoot = path.resolve(__dirname, "..", "..");
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: "./tests",
   timeout: 60000,
   expect: { timeout: 10000 },
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure'
+    baseURL: "http://localhost:3000",
+    viewport: { width: 1440, height: 900 },
+    trace: "on-first-retry",
+    screenshot: "only-on-failure"
   },
   webServer: {
-    command: 'pnpm --filter web dev --hostname 0.0.0.0 --port 3000',
-    port: 3000,
+    cwd: workspaceRoot,
+    command: "pnpm -C apps/web start",
+    url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000
   },
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] }
     }
   ]
 });
