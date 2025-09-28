@@ -22,20 +22,40 @@ export const FooterNoSSR = dynamic<ComponentProps<FooterComponent>>(
 
 export const FeatureGridNoSSR = dynamic<ComponentProps<FeatureGridComponent>>(
   () => import('./FeatureGrid').then((mod) => mod.FeatureGrid),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="aspect-[5/3] rounded-2xl bg-secondary/30 animate-pulse" />
+    ),
+  }
 );
 
 export const BeforeAfterNoSSR = dynamic<ComponentProps<BeforeAfterComponent>>(
   () => import('./BeforeAfter').then((mod) => mod.BeforeAfter),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="aspect-[5/3] rounded-2xl bg-secondary/30 animate-pulse" />
+    ),
+  }
 );
 
 export const PricingSectionNoSSR = dynamic<ComponentProps<PricingSectionComponent>>(
   () => import('./PricingSection').then((mod) => mod.PricingSection),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="aspect-[5/3] rounded-2xl bg-secondary/30 animate-pulse" />
+    ),
+  }
 );
 
 export const HeroInteractiveImageNoSSR = dynamic<ComponentProps<HeroInteractiveImageComponent>>(
   () => import('./HeroInteractiveImage'),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="aspect-[5/3] rounded-2xl bg-secondary/30 animate-pulse" />
+    ),
+  }
 );
