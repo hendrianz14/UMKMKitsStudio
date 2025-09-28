@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 import { AuthProviderButtons } from "@/components/auth/AuthProviderButtons";
@@ -43,22 +43,18 @@ export default function SignInPage() {
     }
   }, [auth]);
 
-  const errorMessages: Record<string, string> = useMemo(
-    () => ({
-      "auth/user-not-found": "Email belum terdaftar.",
-      "auth/wrong-password": "Password salah.",
-      "auth/too-many-requests": "Terlalu banyak percobaan. Coba lagi nanti.",
-      "auth/invalid-credential": "Kredensial tidak valid.",
-    }),
-    []
-  );
-
   const mapError = useCallback(
     (code: string | undefined) => {
-      if (!code) return "Gagal masuk. Silakan coba lagi.";
-      return errorMessages[code] ?? "Gagal masuk. Silakan coba lagi.";
+      if (!code) return "Kredensial tidak valid.";
+      if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+        return "Password salah.";
+      }
+      if (code === "auth/too-many-requests") {
+        return "Terlalu banyak percobaan. Coba beberapa saat lagi.";
+      }
+      return "Kredensial tidak valid.";
     },
-    [errorMessages]
+    []
   );
 
   const handleEnsureUser = useCallback(async () => {
@@ -89,9 +85,19 @@ export default function SignInPage() {
       return;
     }
     setLoading(true);
+    const emailNormalized = email.trim().toLowerCase();
     try {
-      const { signInWithEmailAndPassword } = await import("firebase/auth");
-      const credential = await signInWithEmailAndPassword(currentAuth, email, password);
+      const { fetchSignInMethodsForEmail, signInWithEmailAndPassword } = await import("firebase/auth");
+      const methods = await fetchSignInMethodsForEmail(currentAuth, emailNormalized);
+      if (!methods.length) {
+        setError("Email belum terdaftar.");
+        return;
+      }
+      if (!methods.includes("password")) {
+        setError("Kredensial tidak valid.");
+        return;
+      }
+      const credential = await signInWithEmailAndPassword(currentAuth, emailNormalized, password);
       await ensureUserDoc(credential.user);
       if (locale) {
         router.replace(`/${locale}/dashboard`);
@@ -140,7 +146,7 @@ export default function SignInPage() {
         <AuthProviderButtons
           onSuccess={handleEnsureUser}
           onError={(err) => {
-            setError(err.message || mapError((err as { code?: string }).code));
+            setError(mapError((err as { code?: string }).code));
           }}
         />
         <div className="relative flex items-center gap-3 text-xs text-muted-foreground">
@@ -154,6 +160,7 @@ export default function SignInPage() {
             onChange={(event) => setEmail(event.target.value)}
             required
             placeholder="nama@brand.id"
+            inputClassName="text-white placeholder:text-muted-foreground"
           />
           <PasswordField
             value={password}
@@ -162,6 +169,7 @@ export default function SignInPage() {
             placeholder="••••••••"
             autoComplete="current-password"
             showStrength={false}
+            inputClassName="text-white placeholder:text-muted-foreground"
           />
           <div className="flex items-center justify-between text-sm">
             <Link
@@ -180,7 +188,7 @@ export default function SignInPage() {
               </div>
             </Alert>
           ) : null}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full btn-primary text-white" disabled={loading}>
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

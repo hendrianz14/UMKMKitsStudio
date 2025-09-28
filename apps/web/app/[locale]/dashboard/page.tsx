@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import type { Route } from "next";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MailCheck } from "lucide-react";
 
 import AuthGate from "@/components/auth/AuthGate";
@@ -32,6 +32,7 @@ const CREDIT_COST: Record<string, number> = {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { locale } = useParams<{ locale: string }>();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [jobs, setJobs] = useState<JobItem[]>([]);
@@ -48,6 +49,9 @@ export default function DashboardPage() {
           industry?: string;
           source?: string;
         };
+        verificationPending?: boolean;
+        verifiedAt?: unknown;
+        credits?: number;
       }
     | null
   >(null);
@@ -98,6 +102,16 @@ export default function DashboardPage() {
 
     return () => unsubscribe();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !userDoc) return;
+    if (userDoc.verificationPending === true && user.emailVerified !== true) {
+      if (!locale) return;
+      const email = user.email ? encodeURIComponent(user.email) : "";
+      const target = `/${locale}/verify-email${email ? `?email=${email}` : ""}` as Route;
+      router.replace(target);
+    }
+  }, [locale, router, user, userDoc]);
 
   const onboardingDefaults = useMemo<OnboardingAnswers | undefined>(() => {
     const onboarding = userDoc?.onboarding;
@@ -155,16 +169,6 @@ export default function DashboardPage() {
   };
 
   const handleOnboardingSkip = async () => {
-    const firestore = getFirebaseFirestore();
-    if (!firestore || !user) return;
-    await setDoc(
-      doc(firestore, "users", user.uid),
-      {
-        onboardingCompleted: false,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
     setDismissedOnboarding(true);
     setIsOnboardingOpen(false);
   };

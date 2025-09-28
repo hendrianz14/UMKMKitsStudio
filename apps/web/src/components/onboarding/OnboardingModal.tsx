@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -40,11 +40,11 @@ const USER_TYPES: Array<{ value: OnboardingAnswers["userType"]; label: string }>
   { value: "team", label: "Tim" },
 ];
 
-const GOALS = [
-  "Konten IG/TikTok",
-  "Katalog produk",
-  "Iklan",
-  "Lainnya",
+const PURPOSE_OPTIONS = [
+  { value: "ig", label: "Konten IG/TikTok" },
+  { value: "catalog", label: "Katalog Produk" },
+  { value: "ads", label: "Iklan" },
+  { value: "other", label: "Lainnya" },
 ];
 
 const BUSINESS_TYPES = [
@@ -65,18 +65,33 @@ const SOURCES = [
 ];
 
 export function OnboardingModal({ open, defaultValues, onSave, onSkip }: OnboardingModalProps) {
-  const [userType, setUserType] = useState<OnboardingAnswers["userType"]>(
-    defaultValues?.userType ?? "personal"
-  );
-  const [goal, setGoal] = useState(defaultValues?.goal ?? "");
-  const [businessType, setBusinessType] = useState(defaultValues?.businessType ?? "");
-  const [source, setSource] = useState(defaultValues?.source ?? "");
+  const [type, setType] = useState<string>(defaultValues?.userType ?? "personal");
+  const [purpose, setPurpose] = useState<string>(defaultValues?.goal ?? "");
+  const [industry, setIndustry] = useState<string>(defaultValues?.businessType ?? "");
+  const [source, setSource] = useState<string>(defaultValues?.source ?? "");
   const [status, setStatus] = useState<"idle" | "saving" | "skipping">("idle");
   const [error, setError] = useState<string | null>(null);
 
   const isValid = useMemo(() => {
-    return Boolean(goal && businessType.trim() && source);
-  }, [goal, businessType, source]);
+    return Boolean(purpose && industry.trim());
+  }, [purpose, industry]);
+
+  useEffect(() => {
+    if (!open) return;
+    const resolvePurpose = (value?: string) => {
+      if (!value) return "";
+      const match = PURPOSE_OPTIONS.find(
+        (option) => option.value === value || option.label.toLowerCase() === value.toLowerCase()
+      );
+      return match ? match.value : value;
+    };
+
+    setType(defaultValues?.userType ?? "personal");
+    setPurpose(resolvePurpose(defaultValues?.goal));
+    setIndustry(defaultValues?.businessType ?? "");
+    setSource(defaultValues?.source ?? "");
+    setError(null);
+  }, [defaultValues, open]);
 
   const isSaving = status === "saving";
   const isSkipping = status === "skipping";
@@ -88,9 +103,9 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
     setError(null);
     try {
       await onSave({
-        userType,
-        goal,
-        businessType: businessType.trim(),
+        userType: type === "team" ? "team" : "personal",
+        goal: purpose,
+        businessType: industry.trim(),
         source,
       });
     } catch (err) {
@@ -129,11 +144,11 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
                 <Button
                   key={option.value}
                   type="button"
-                  variant={userType === option.value ? "primary" : "secondary"}
-                  onClick={() => setUserType(option.value)}
+                  variant={type === option.value ? "primary" : "secondary"}
+                  onClick={() => setType(option.value)}
                   className={cn(
                     "flex-1 border border-border/60",
-                    userType === option.value ? "shadow-glow" : "bg-background/40"
+                    type === option.value ? "shadow-glow" : "bg-background/40"
                   )}
                 >
                   {option.label}
@@ -143,14 +158,14 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">Tujuan utama pakai UMKM Kits</p>
-            <Select value={goal} onValueChange={setGoal}>
+            <Select value={purpose} onValueChange={setPurpose}>
               <SelectTrigger className="text-white placeholder:text-muted-foreground">
                 <SelectValue placeholder="Pilih tujuan" />
               </SelectTrigger>
-              <SelectContent>
-                {GOALS.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {item}
+              <SelectContent className="text-foreground">
+                {PURPOSE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value} className="text-foreground">
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -161,8 +176,8 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
             <div>
               <Input
                 list="onboarding-business"
-                value={businessType}
-                onChange={(event) => setBusinessType(event.target.value)}
+                value={industry}
+                onChange={(event) => setIndustry(event.target.value)}
                 placeholder="Contoh: Kuliner"
                 className="text-white placeholder:text-muted-foreground"
               />
@@ -179,9 +194,9 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
               <SelectTrigger className="text-white placeholder:text-muted-foreground">
                 <SelectValue placeholder="Pilih sumber" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="text-foreground">
                 {SOURCES.map((item) => (
-                  <SelectItem key={item} value={item}>
+                  <SelectItem key={item} value={item} className="text-foreground">
                     {item}
                   </SelectItem>
                 ))}

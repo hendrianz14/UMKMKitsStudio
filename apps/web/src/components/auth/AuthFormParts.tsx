@@ -8,12 +8,14 @@ import { cn } from "@/lib/utils";
 export interface EmailFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string | null;
+  inputClassName?: string;
 }
 
 export interface PasswordFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string | null;
   showStrength?: boolean;
+  inputClassName?: string;
 }
 
 export type PasswordChecks = {
@@ -75,6 +77,7 @@ export function EmailField({
   label = "Email",
   error,
   className,
+  inputClassName,
   ...props
 }: EmailFieldProps) {
   const generatedId = useId();
@@ -85,7 +88,13 @@ export function EmailField({
       <label htmlFor={inputId} className="text-sm font-medium text-foreground">
         {label}
       </label>
-      <Input id={inputId} type="email" autoComplete="email" {...props} />
+      <Input
+        id={inputId}
+        type="email"
+        autoComplete="email"
+        className={cn(inputClassName)}
+        {...props}
+      />
       {error ? (
         <p className="flex items-center gap-1 text-sm text-destructive">
           <Circle className="h-3.5 w-3.5" aria-hidden="true" />
@@ -102,6 +111,7 @@ export function PasswordField({
   error,
   showStrength = true,
   className,
+  inputClassName,
   value = "",
   onChange,
   ...props
@@ -126,7 +136,7 @@ export function PasswordField({
           autoComplete={props.autoComplete ?? "new-password"}
           value={value}
           onChange={onChange}
-          className="pr-12"
+          className={cn("pr-12", inputClassName)}
           {...props}
         />
         <button

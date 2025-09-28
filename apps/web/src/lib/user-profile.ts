@@ -9,6 +9,8 @@ export interface UserDoc {
   credits: number;
   onboardingCompleted: boolean;
   onboarding?: Record<string, unknown>;
+  verificationPending?: boolean;
+  verifiedAt?: ReturnType<typeof serverTimestamp> | null;
 }
 
 export async function ensureUserDoc(user: User, extra?: Partial<UserDoc>) {
@@ -28,6 +30,7 @@ export async function ensureUserDoc(user: User, extra?: Partial<UserDoc>) {
     name: extra?.name ?? user.displayName ?? null,
     credits: 50,
     onboardingCompleted: false,
+    verificationPending: false,
   };
 
   if (!snapshot.exists()) {
@@ -61,6 +64,9 @@ export async function ensureUserDoc(user: User, extra?: Partial<UserDoc>) {
   }
   if (existing?.onboardingCompleted == null) {
     dataToMerge.onboardingCompleted = basePayload.onboardingCompleted;
+  }
+  if (existing?.verificationPending == null && basePayload.verificationPending != null) {
+    dataToMerge.verificationPending = basePayload.verificationPending;
   }
 
   await setDoc(ref, dataToMerge, { merge: true });

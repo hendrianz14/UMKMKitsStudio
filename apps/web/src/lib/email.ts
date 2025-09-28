@@ -18,6 +18,11 @@ export function isAllowedDomain(email: string, allowedDomains: string[]): boolea
   return allowedDomains.some((allowed) => normalizedDomain === allowed.toLowerCase());
 }
 
+export function isAllowedGmail(email: string): boolean {
+  const domain = getEmailDomain(email);
+  return domain === "gmail.com";
+}
+
 export function isValidEmailFormat(email: string): boolean {
   const normalized = normalizeEmail(email);
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);

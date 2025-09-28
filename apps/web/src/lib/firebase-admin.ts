@@ -1,11 +1,14 @@
-import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
-import { getAuth, type Auth } from "firebase-admin/auth";
-import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import admin from "firebase-admin";
 
-let adminApp: App | null = null;
+let adminApp: admin.app.App | null = null;
 
-function initAdminApp(): App | null {
+function initAdminApp(): admin.app.App | null {
   if (adminApp) {
+    return adminApp;
+  }
+
+  if (admin.apps.length) {
+    adminApp = admin.app();
     return adminApp;
   }
 
@@ -20,11 +23,9 @@ function initAdminApp(): App | null {
   }
 
   try {
-    adminApp =
-      getApps()[0] ??
-      initializeApp({
-        credential: cert({ projectId, clientEmail, privateKey }),
-      });
+    adminApp = admin.initializeApp({
+      credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
+    });
     return adminApp;
   } catch (error) {
     console.error("[firebase-admin] Failed to initialize", error);
@@ -32,18 +33,18 @@ function initAdminApp(): App | null {
   }
 }
 
-export function getFirebaseAdminApp(): App | null {
+export function getFirebaseAdminApp(): admin.app.App | null {
   return initAdminApp();
 }
 
-export function getFirebaseAdminAuth(): Auth | null {
+export function getFirebaseAdminAuth(): admin.auth.Auth | null {
   const app = initAdminApp();
   if (!app) return null;
-  return getAuth(app);
+  return admin.auth(app);
 }
 
-export function getFirebaseAdminFirestore(): Firestore | null {
+export function getFirebaseAdminFirestore(): admin.firestore.Firestore | null {
   const app = initAdminApp();
   if (!app) return null;
-  return getFirestore(app);
+  return admin.firestore(app);
 }
