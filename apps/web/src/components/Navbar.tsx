@@ -78,7 +78,7 @@ export function Navbar({ locale = "id" }: { locale?: Locale }) {
     >
       <div className="container flex h-full items-center justify-between gap-4">
         <Link
-          href={brandHref}
+          href={{ pathname: basePath, hash: item.id }}
           className="flex items-center gap-2 text-sm font-semibold tracking-tight"
         >
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-accent text-white shadow-lg shadow-blue-600/40">
@@ -140,7 +140,7 @@ export function Navbar({ locale = "id" }: { locale?: Locale }) {
                         asChild
                       >
 
-                        <Link href={`${base}/#${item.id}`}>{item.label}</Link>
+                        <Link href={{ pathname: basePath, hash: item.id }}>{item.label}</Link>
 
                       </Button>
                     ))
