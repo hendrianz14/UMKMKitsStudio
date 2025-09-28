@@ -23,11 +23,7 @@ import {
   fetchMissingFirebaseEnvKeys,
   type FirebaseEnvKey,
 } from "@/lib/firebase-env-check";
-import {
-  isAllowedDomain,
-  isValidEmailFormat,
-  normalizeEmail,
-} from "@/lib/email";
+import { isAllowedGmail, isValidEmailFormat, normalizeEmail } from "@/lib/email";
 
 export default function SignUpPage() {
   const { locale } = useParams<{ locale: string }>();
@@ -68,7 +64,11 @@ export default function SignUpPage() {
   const handleProviderSuccess = useCallback(async () => {
     const currentUser = getFirebaseAuth()?.currentUser;
     if (currentUser) {
-      await ensureUserDoc(currentUser);
+      await ensureUserDoc(currentUser, {
+        name: currentUser.displayName ?? null,
+        credits: 50,
+        verificationPending: false,
+      });
       if (locale) {
         router.replace(`/${locale}/dashboard`);
       }
@@ -89,8 +89,8 @@ export default function SignUpPage() {
       setError("Format email tidak valid.");
       return;
     }
-    if (!isAllowedDomain(normalizedEmail, ["gmail.com"])) {
-      setError("Gunakan email @gmail.com");
+    if (!isAllowedGmail(normalizedEmail)) {
+      setError("Gunakan email @gmail.com.");
       return;
     }
     if (!passwordValid) {
@@ -119,6 +119,7 @@ export default function SignUpPage() {
         createUserWithEmailAndPassword,
         sendEmailVerification,
         updateProfile,
+        signOut,
       } = await import("firebase/auth");
       const credential = await createUserWithEmailAndPassword(currentAuth, normalizedEmail, password);
       await updateProfile(credential.user, { displayName: trimmedName });
@@ -127,14 +128,24 @@ export default function SignUpPage() {
         process.env.NEXT_PUBLIC_APP_URL ??
         (typeof window !== "undefined" ? window.location.origin : undefined);
       const actionUrl = baseUrl ? `${baseUrl.replace(/\/$/, "")}/auth/action` : undefined;
-      if (actionUrl) {
-        await sendEmailVerification(credential.user, { url: actionUrl });
-      } else {
-        await sendEmailVerification(credential.user);
-      }
-      await ensureUserDoc(credential.user, { name: trimmedName });
+      await sendEmailVerification(
+        credential.user,
+        actionUrl
+          ? {
+              url: actionUrl,
+            }
+          : undefined
+      );
+      await ensureUserDoc(credential.user, {
+        name: trimmedName,
+        email: credential.user.email ?? normalizedEmail,
+        credits: 0,
+        verificationPending: true,
+        onboardingCompleted: false,
+      });
+      await signOut(currentAuth);
       if (locale) {
-        router.replace(`/${locale}/dashboard?verification=check-email`);
+        router.replace(`/${locale}/verify-email?email=${encodeURIComponent(normalizedEmail)}`);
       }
     } catch (err) {
       if (typeof window !== "undefined") {
@@ -180,8 +191,9 @@ export default function SignUpPage() {
         <AuthProviderButtons
           onSuccess={handleProviderSuccess}
           onError={(error) => {
-            setError(error.message || mapError((error as { code?: string }).code));
+            setError(mapError((error as { code?: string }).code));
           }}
+          disabled={loading}
         />
         <div className="relative flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex-1 border-t border-border/70" />
@@ -199,6 +211,7 @@ export default function SignUpPage() {
               onChange={(event) => setName(event.target.value)}
               placeholder="Nama Anda"
               required
+              className="text-white placeholder:text-muted-foreground"
             />
           </div>
           <EmailField
@@ -206,6 +219,7 @@ export default function SignUpPage() {
             onChange={(event) => setEmail(event.target.value)}
             required
             placeholder="nama@brand.id"
+            inputClassName="text-white placeholder:text-muted-foreground"
           />
           <PasswordField
             value={password}
@@ -214,6 +228,7 @@ export default function SignUpPage() {
             placeholder="••••••••"
             autoComplete="new-password"
             showStrength
+            inputClassName="text-white placeholder:text-muted-foreground"
           />
           {error ? (
             <Alert variant="destructive" className="w-full">
@@ -224,7 +239,7 @@ export default function SignUpPage() {
               </div>
             </Alert>
           ) : null}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full btn-primary text-white" disabled={loading}>
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { getFirebaseAdminFirestore } from "@/lib/firebase-admin";
 import { isValidEmailFormat, normalizeEmail } from "@/lib/email";
 
-const RATE_LIMIT_WINDOW_MS = 1000 * 60 * 60 * 3; // 3 hours
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 
 function getRetryAfterMinutes(lastSentMs: number, nowMs: number) {
   const diff = RATE_LIMIT_WINDOW_MS - (nowMs - lastSentMs);
@@ -26,7 +26,7 @@ function extractMillis(value: unknown): number | null {
     try {
       return (value as { toMillis: () => number }).toMillis();
     } catch (error) {
-      console.warn("[password-reset] Failed to read Firestore timestamp", error);
+      console.warn("[resend-verification] Failed to read Firestore timestamp", error);
       return null;
     }
   }
@@ -34,20 +34,19 @@ function extractMillis(value: unknown): number | null {
 }
 
 export async function POST(request: Request) {
-  const defaultMessage = "Jika email terdaftar, kami kirim tautan reset.";
-
   let emailInput = "";
+
   try {
     const body = await request.json().catch(() => null);
     emailInput = typeof body?.email === "string" ? body.email : "";
   } catch (error) {
-    console.error("[password-reset] Failed to parse body", error);
-    return NextResponse.json({ message: defaultMessage });
+    console.error("[resend-verification] Failed to parse body", error);
+    return NextResponse.json({ message: "Jika email terdaftar, tautan verifikasi dikirim." });
   }
 
   const normalizedEmail = normalizeEmail(emailInput);
   if (!isValidEmailFormat(normalizedEmail)) {
-    return NextResponse.json({ message: defaultMessage });
+    return NextResponse.json({ message: "Jika email terdaftar, tautan verifikasi dikirim." });
   }
 
   const firestore = getFirebaseAdminFirestore();
@@ -56,7 +55,7 @@ export async function POST(request: Request) {
     process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL;
 
   if (!firestore || !apiKey) {
-    console.error("[password-reset] Missing Firebase configuration");
+    console.error("[resend-verification] Missing Firebase configuration");
     return NextResponse.json(
       { message: "Layanan sedang tidak tersedia. Coba lagi nanti." },
       { status: 500 }
@@ -64,7 +63,7 @@ export async function POST(request: Request) {
   }
 
   const emailHash = crypto.createHash("sha256").update(normalizedEmail).digest("hex");
-  const docRef = firestore.collection("password_resets").doc(emailHash);
+  const docRef = firestore.collection("verification_resends").doc(emailHash);
   const now = Date.now();
   try {
     const snapshot = await docRef.get();
@@ -90,7 +89,7 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          requestType: "PASSWORD_RESET",
+          requestType: "VERIFY_EMAIL",
           email: normalizedEmail,
           continueUrl: actionUrl,
           canHandleCodeInApp: false,
@@ -105,9 +104,9 @@ export async function POST(request: Request) {
       const message = errorPayload?.error?.message;
 
       if (message === "EMAIL_NOT_FOUND" || message === "USER_DISABLED") {
-        // We intentionally respond with success to avoid leaking account existence.
+        // Hide account existence
       } else {
-        console.error("[password-reset] sendOobCode failed", message ?? response.statusText);
+        console.error("[resend-verification] sendOobCode failed", message ?? response.statusText);
         return NextResponse.json(
           { message: "Gagal memproses permintaan. Coba lagi nanti." },
           { status: 500 }
@@ -124,9 +123,9 @@ export async function POST(request: Request) {
       { merge: true }
     );
 
-    return NextResponse.json({ message: defaultMessage });
+    return NextResponse.json({ message: "Jika email terdaftar, tautan verifikasi dikirim." });
   } catch (error) {
-    console.error("[password-reset] Unexpected error", error);
+    console.error("[resend-verification] Unexpected error", error);
     return NextResponse.json(
       { message: "Gagal memproses permintaan. Coba lagi nanti." },
       { status: 500 }

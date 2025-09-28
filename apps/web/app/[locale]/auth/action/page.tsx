@@ -3,11 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, LockKeyhole } from "lucide-react";
 
 import {
   PasswordField,
@@ -15,7 +11,9 @@ import {
 } from "@/components/auth/AuthFormParts";
 import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
-import { getFirebaseAuth } from "@/lib/firebase-client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getFirebaseAuth, getFirebaseFirestore } from "@/lib/firebase-client";
+import { cn } from "@/lib/utils";
 import {
   collectMissingFirebaseEnvKeys,
   fetchMissingFirebaseEnvKeys,
@@ -39,7 +37,7 @@ export default function AuthActionPage() {
   const auth = getFirebaseAuth();
   const [missing, setMissing] = useState<FirebaseEnvKey[]>(collectMissingFirebaseEnvKeys());
   const [verifyStatus, setVerifyStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
-  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [reset, setReset] = useState<ResetState>({ email: null, status: "idle" });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -63,15 +61,44 @@ export default function AuthActionPage() {
         try {
           const { applyActionCode } = await import("firebase/auth");
           await applyActionCode(auth, oobCode);
+          try {
+            await auth.currentUser?.reload();
+          } catch (reloadError) {
+            if (process.env.NODE_ENV !== "production") {
+              console.warn("[auth-action] Failed to reload user after verification", reloadError);
+            }
+          }
+          const firestore = getFirebaseFirestore();
+          const currentUser = auth.currentUser;
+          if (firestore && currentUser) {
+            try {
+              const { doc, getDoc, serverTimestamp, setDoc } = await import("firebase/firestore");
+              const ref = doc(firestore, "users", currentUser.uid);
+              const snapshot = await getDoc(ref);
+              const data = snapshot.exists() ? (snapshot.data() as { credits?: number; verifiedAt?: unknown }) : null;
+              const existingCredits = typeof data?.credits === "number" ? data.credits : null;
+              const hasVerifiedAt = data?.verifiedAt != null;
+              const updates: Record<string, unknown> = { verificationPending: false };
+              if (!snapshot.exists() || existingCredits === null || existingCredits === 0 || !hasVerifiedAt) {
+                updates.credits = 50;
+                updates.verifiedAt = serverTimestamp();
+              }
+              await setDoc(ref, updates, { merge: true });
+            } catch (firestoreError) {
+              if (process.env.NODE_ENV !== "production") {
+                console.error("[auth-action] Failed to update user verification state", firestoreError);
+              }
+            }
+          }
           setVerifyStatus("success");
-          setVerifyError(null);
+          setActionError(null);
         } catch (error) {
           const firebaseError = error as { code?: string };
           setVerifyStatus("error");
           if (firebaseError.code === "auth/invalid-action-code") {
-            setVerifyError("Kode verifikasi tidak valid atau sudah digunakan.");
+            setActionError("Kode verifikasi tidak valid atau sudah digunakan.");
           } else {
-            setVerifyError("Gagal memverifikasi email. Coba lagi nanti.");
+            setActionError("Gagal memverifikasi email. Coba lagi nanti.");
           }
         }
       })();
@@ -109,13 +136,13 @@ export default function AuthActionPage() {
       const { confirmPasswordReset } = await import("firebase/auth");
       await confirmPasswordReset(auth, oobCode, password);
       setReset((prev) => ({ ...prev, status: "completed" }));
-      setVerifyError(null);
+      setActionError(null);
     } catch (error) {
       const firebaseError = error as { code?: string };
       if (firebaseError.code === "auth/weak-password") {
-        setVerifyError("Password terlalu lemah.");
+        setActionError("Password terlalu lemah.");
       } else {
-        setVerifyError("Gagal menyimpan password baru. Coba lagi.");
+        setActionError("Gagal menyimpan password baru. Coba lagi.");
       }
     } finally {
       setSubmitting(false);
@@ -161,32 +188,62 @@ export default function AuthActionPage() {
   }
 
   if (mode === "verifyEmail") {
+    const verifying = verifyStatus === "processing";
+    const verifySucceeded = verifyStatus === "success";
+    const title = verifying
+      ? "Memverifikasi email..."
+      : verifySucceeded
+        ? "Email terverifikasi!"
+        : "Verifikasi tidak berhasil";
+    const subtitle = verifying
+      ? "Kami sedang memproses tautan verifikasi Anda."
+      : verifySucceeded
+        ? "Akun Anda siap digunakan. Kredit gratis Anda sudah aktif."
+        : "Tautan verifikasi ini tidak lagi berlaku.";
+
     return (
       <div className="container mx-auto max-w-xl py-16">
-        <CardX tone="surface" padding="lg" className="space-y-6 text-center">
-          <CardXHeader title="Verifikasi Email" />
-          {verifyStatus === "processing" ? (
-            <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
-              <p>Memverifikasi email Anda...</p>
+        <CardX tone="surface" padding="lg" className="space-y-6">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div
+              className={cn(
+                "rounded-full p-3",
+                verifying
+                  ? "bg-primary/15 text-primary"
+                  : verifySucceeded
+                    ? "bg-emerald-500/15 text-emerald-400"
+                    : "bg-destructive/15 text-destructive"
+              )}
+            >
+              {verifying ? (
+                <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+              ) : verifySucceeded ? (
+                <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
+              ) : (
+                <AlertCircle className="h-6 w-6" aria-hidden="true" />
+              )}
             </div>
-          ) : null}
-          {verifyStatus === "success" ? (
-            <div className="flex flex-col items-center gap-3 text-sm text-emerald-400">
-              <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
-              <p>Email Anda sudah terverifikasi. Terima kasih!</p>
+            <div className="space-y-1">
+              <h1 className="text-2xl font-semibold text-white">{title}</h1>
+              <p className="text-sm text-muted-foreground">{subtitle}</p>
             </div>
+          </div>
+          {actionError ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" aria-hidden="true" />
+              <div>
+                <AlertTitle>Perlu tindakan</AlertTitle>
+                <AlertDescription>{actionError}</AlertDescription>
+              </div>
+            </Alert>
           ) : null}
-          {verifyStatus === "error" && verifyError ? (
-            <div className="flex items-start justify-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertCircle className="mt-0.5 h-4 w-4" aria-hidden="true" />
-              <span>{verifyError}</span>
-            </div>
-          ) : null}
-          <div className="flex justify-center">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Button
               type="button"
+              className="btn-primary text-white"
+              disabled={!verifySucceeded}
               onClick={() => {
+                if (!verifySucceeded) return;
                 if (continueUrl) {
                   window.location.href = continueUrl;
                   return;
@@ -198,6 +255,9 @@ export default function AuthActionPage() {
             >
               Ke Dashboard
             </Button>
+            <Button type="button" variant="outline" className="text-white" asChild>
+              <Link href={`/${locale}/sign-in`}>Masuk</Link>
+            </Button>
           </div>
         </CardX>
       </div>
@@ -205,26 +265,45 @@ export default function AuthActionPage() {
   }
 
   if (mode === "resetPassword") {
+    const checking = reset.status === "checking";
+    const invalid = reset.status === "invalid";
+    const valid = reset.status === "valid";
+    const completed = reset.status === "completed";
+
     return (
       <div className="container mx-auto max-w-xl py-16">
         <CardX tone="surface" padding="lg" className="space-y-6">
-          <CardXHeader
-            title="Reset Password"
-            subtitle={reset.email ? `Untuk akun ${reset.email}` : "Masukkan password baru untuk akun Anda."}
-          />
-          {reset.status === "checking" ? (
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="rounded-full bg-primary/15 p-3 text-primary">
+              <LockKeyhole className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-2xl font-semibold text-white">Setel password baru</h1>
+              <p className="text-sm text-muted-foreground">
+                {reset.email
+                  ? `Tautan ini untuk akun ${reset.email}.`
+                  : "Masukkan password baru untuk akun UMKM Kits Anda."}
+              </p>
+            </div>
+          </div>
+          {checking ? (
+            <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               <span>Memeriksa tautan reset...</span>
             </div>
           ) : null}
-          {reset.status === "invalid" ? (
-            <div className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertCircle className="mt-0.5 h-4 w-4" aria-hidden="true" />
-              <span>{reset.errorMessage ?? "Tautan reset tidak valid."}</span>
-            </div>
+          {invalid ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" aria-hidden="true" />
+              <div>
+                <AlertTitle>Tautan tidak valid</AlertTitle>
+                <AlertDescription>
+                  {reset.errorMessage ?? "Kode reset sudah kedaluwarsa atau pernah digunakan."}
+                </AlertDescription>
+              </div>
+            </Alert>
           ) : null}
-          {reset.status === "valid" ? (
+          {valid ? (
             <form onSubmit={handleResetSubmit} className="space-y-4">
               <PasswordField
                 label="Password baru"
@@ -232,6 +311,7 @@ export default function AuthActionPage() {
                 onChange={(event) => setPassword(event.target.value)}
                 required
                 showStrength
+                inputClassName="text-white placeholder:text-muted-foreground"
               />
               <PasswordField
                 label="Konfirmasi password"
@@ -239,35 +319,43 @@ export default function AuthActionPage() {
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 required
                 showStrength={false}
+                inputClassName="text-white placeholder:text-muted-foreground"
               />
               {!passwordsMatch ? (
                 <p className="text-sm text-destructive">Password tidak sama.</p>
               ) : null}
-              {verifyError ? (
-                <div className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-                  <AlertCircle className="mt-0.5 h-4 w-4" aria-hidden="true" />
-                  <span>{verifyError}</span>
-                </div>
+              {actionError ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                  <div>
+                    <AlertTitle>Gagal menyimpan</AlertTitle>
+                    <AlertDescription>{actionError}</AlertDescription>
+                  </div>
+                </Alert>
               ) : null}
-              <Button type="submit" className="w-full" disabled={!passwordValid || !passwordsMatch || submitting}>
+              <Button
+                type="submit"
+                className="btn-primary text-white w-full"
+                disabled={!passwordValid || !passwordsMatch || submitting}
+              >
                 {submitting ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                     Menyimpan...
                   </span>
                 ) : (
-                  "Simpan password"
+                  "Setel Password"
                 )}
               </Button>
             </form>
           ) : null}
-          {reset.status === "completed" ? (
-            <div className="space-y-4">
-              <div className="flex items-start gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-400">
-                <CheckCircle2 className="mt-0.5 h-4 w-4" aria-hidden="true" />
-                <span>Password berhasil diperbarui. Silakan masuk dengan password baru Anda.</span>
+          {completed ? (
+            <div className="space-y-4 text-center">
+              <div className="mx-auto flex w-fit items-center gap-2 rounded-full bg-emerald-500/15 px-4 py-2 text-sm text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                <span>Password berhasil diperbarui.</span>
               </div>
-              <Button asChild className="w-full">
+              <Button asChild className="btn-primary text-white w-full">
                 <Link href={`/${locale}/sign-in`}>Masuk</Link>
               </Button>
             </div>
