@@ -7,7 +7,16 @@ import { useEffect, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { CardX, CardXFooter, CardXHeader } from '../../../components/ui/cardx';
-import { getFirebaseAuth } from '../../../lib/firebase-client';
+import { clientEnvFlags } from '@/lib/env-flags-client';
+import { getFirebaseAuth } from '@/lib/firebase-client';
+
+const CLIENT_FLAG_TO_ENV_KEY: Record<keyof ReturnType<typeof clientEnvFlags>, string> = {
+  API_KEY: 'NEXT_PUBLIC_FIREBASE_API_KEY',
+  AUTH_DOMAIN: 'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
+  PROJECT_ID: 'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+  STORAGE_BUCKET: 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
+  APP_ID: 'NEXT_PUBLIC_FIREBASE_APP_ID'
+};
 
 async function readEnvFlags(): Promise<string[]> {
   try {
@@ -28,16 +37,26 @@ async function readEnvFlags(): Promise<string[]> {
 export default function SignUpPage() {
   const { locale } = useParams<{ locale: string }>();
   const t = useTranslations('auth');
+  const flags = clientEnvFlags();
+  const missingClientKeys = Object.entries(flags)
+    .filter(([, value]) => !value)
+    .map(([key]) => CLIENT_FLAG_TO_ENV_KEY[key as keyof typeof CLIENT_FLAG_TO_ENV_KEY]);
   const auth = getFirebaseAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [missing, setMissing] = useState<string[] | null>(null);
+  const [missing, setMissing] = useState<string[]>(missingClientKeys);
 
   useEffect(() => {
     if (!auth) {
-      readEnvFlags().then(setMissing);
+      readEnvFlags().then((serverMissing) => {
+        if (!serverMissing.length) return;
+        setMissing((prev) => {
+          const merged = new Set([...prev, ...serverMissing]);
+          return Array.from(merged);
+        });
+      });
     }
   }, [auth]);
 
@@ -50,7 +69,7 @@ export default function SignUpPage() {
           lalu redeploy/jalankan ulang:
         </p>
         <ul className="mt-3 list-disc list-inside text-sm">
-          {(missing ?? []).map((key) => (
+          {missing.map((key) => (
             <li key={key}>
               <code>{key}</code>
             </li>
@@ -65,9 +84,21 @@ export default function SignUpPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const flags = clientEnvFlags();
     const currentAuth = getFirebaseAuth();
     if (!currentAuth) {
-      setError('Konfigurasi Firebase belum lengkap.');
+      const missingKeys = Object.entries(flags)
+        .filter(([, value]) => !value)
+        .map(([key]) => CLIENT_FLAG_TO_ENV_KEY[key as keyof typeof CLIENT_FLAG_TO_ENV_KEY]);
+      setMissing((prev) => {
+        const merged = new Set([...prev, ...missingKeys]);
+        return Array.from(merged);
+      });
+      setError(
+        missingKeys.length
+          ? `Konfigurasi Firebase belum lengkap di client: ${missingKeys.join(', ')}`
+          : 'Konfigurasi Firebase belum lengkap.'
+      );
       return;
     }
     setLoading(true);

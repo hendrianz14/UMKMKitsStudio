@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Slider } from '../ui/slider';
 import { toast } from '../ui/toast';
 import { useEditor } from './EditorCanvas';
-import { getFirebaseAuth, getFirebaseFirestore, getFirebaseStorage } from '../../../lib/firebase-client';
+import { getFirebaseAuth, getFirebaseFirestore, getFirebaseStorage } from '@/lib/firebase-client';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 

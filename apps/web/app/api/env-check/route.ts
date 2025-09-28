@@ -9,12 +9,7 @@ export function GET() {
       PROJECT_ID: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
       STORAGE_BUCKET: !!process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       APP_ID: !!process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-      MEASUREMENT_ID: !!process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID // opsional
+      MEASUREMENT_ID: !!process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
     },
-    // hint tidak mengandung nilai rahasia
-    hints: {
-      storageBucketShouldEndWith: '.appspot.com',
-      commonMistake: 'Jangan pakai URL firebasestorage…; gunakan <project-id>.appspot.com'
-    }
   });
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, usePathname } from "next/navigation";
-import { getClientApp } from "../../../lib/firebase-client";
+import { getClientApp } from "@/lib/firebase-client";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { cn } from "../../../lib/utils";
 import { isValidLocale } from "../../../lib/i18n";
