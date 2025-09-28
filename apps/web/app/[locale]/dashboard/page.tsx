@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
-import { Button } from '../../../components/ui/button';
-import { CardX, CardXHeader } from '../../../components/ui/cardx';
-import { CreditBadge } from '../../../components/credit-badge';
-import { UploadDropzone } from '../../../components/upload-dropzone';
-import AuthGate from '../../../src/components/auth/AuthGate';
+import { Button } from '@/components/ui/button';
+import { CardX, CardXHeader } from '@/components/ui/cardx';
+import { CreditBadge } from '@/components/credit-badge';
+import { UploadDropzone } from '@/components/upload-dropzone';
+import AuthGate from '@/components/auth/AuthGate';
 
 interface JobItem {
   id: string;

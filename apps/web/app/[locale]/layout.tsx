@@ -4,10 +4,10 @@ import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 import { unstable_setRequestLocale } from 'next-intl/server';
 import { Plus_Jakarta_Sans } from 'next/font/google';
-import { cn } from '../../lib/utils';
-import { ToasterClient } from '../../components/ToasterClient';
-import { isValidLocale, locales } from '../../lib/i18n';
-import { FooterNoSSR, NavbarNoSSR } from '../../src/components/no-ssr';
+import { cn } from '@/lib/utils';
+import { ToasterClient } from '@/components/ToasterClient';
+import { isValidLocale, locales } from '@/lib/i18n';
+import { FooterNoSSR, NavbarNoSSR } from '@/components/no-ssr';
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
@@ -37,7 +37,7 @@ export default async function LocaleLayout({
 
   unstable_setRequestLocale(locale);
 
-  const messages = await import(`../../messages/${locale}.json`).then((mod) => mod.default);
+  const messages = await import(`@/messages/${locale}.json`).then((mod) => mod.default);
 
   return (
     <html lang={locale} className="dark" suppressHydrationWarning>

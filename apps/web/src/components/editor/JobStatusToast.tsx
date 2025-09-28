@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { toast } from '../ui/toast';
-import { useEditor } from './EditorCanvas';
+import { toast } from '@/components/ui/toast';
+import { useEditor } from '@/components/editor/EditorCanvas';
 
 export function JobStatusToast() {
   const {

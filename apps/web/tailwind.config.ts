@@ -4,10 +4,9 @@ import defaultTheme from 'tailwindcss/defaultTheme';
 const config: Config = {
   content: [
     './app/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './data/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
-    './styles/**/*.{ts,tsx,css}'
+    './src/data/**/*.{ts,tsx}',
+    './src/styles/**/*.{ts,tsx,css}'
   ],
   darkMode: ['class'],
   theme: {

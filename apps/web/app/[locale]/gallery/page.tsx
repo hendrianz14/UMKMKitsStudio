@@ -1,6 +1,6 @@
 import Image from 'next/image';
-import { CardX } from '../../../components/ui/cardx';
-import { templates } from '../../../data/templates';
+import { CardX } from '@/components/ui/cardx';
+import { templates } from '@/data/templates';
 
 export const dynamic = 'force-dynamic';
 

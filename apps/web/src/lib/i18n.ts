@@ -14,7 +14,7 @@ export default getRequestConfig(async ({ locale }) => {
     notFound();
   }
 
-  const messages = await import(`../messages/${locale}.json`).then((mod) => mod.default);
+  const messages = await import(`@/messages/${locale}.json`).then((mod) => mod.default);
 
   return {
     locale,

@@ -2,11 +2,11 @@
 
 import { useMemo } from 'react';
 import { Sparkles, Wand2 } from 'lucide-react';
-import { EditorProvider, EditorCanvas } from '../../../src/components/editor/EditorCanvas';
-import { Toolbar } from '../../../src/components/editor/Toolbar';
-import { LayersPanel } from '../../../src/components/editor/LayersPanel';
-import { TemplatePicker } from '../../../src/components/editor/TemplatePicker';
-import { JobStatusToast } from '../../../src/components/editor/JobStatusToast';
+import { EditorProvider, EditorCanvas } from '@/components/editor/EditorCanvas';
+import { Toolbar } from '@/components/editor/Toolbar';
+import { LayersPanel } from '@/components/editor/LayersPanel';
+import { TemplatePicker } from '@/components/editor/TemplatePicker';
+import { JobStatusToast } from '@/components/editor/JobStatusToast';
 
 const tips = [
   'Gunakan mode Pan untuk menggeser kanvas pada layar kecil. Tekan tombol di toolbar untuk mengaktifkan.',

@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ArrowRight } from 'lucide-react';
-import { BeforeAfterNoSSR, FeatureGridNoSSR, FooterNoSSR, NavbarNoSSR, PricingSectionNoSSR } from '../src/components/no-ssr';
+import { BeforeAfterNoSSR, FeatureGridNoSSR, FooterNoSSR, NavbarNoSSR, PricingSectionNoSSR } from '@/components/no-ssr';
 const HeroInteractiveImage = dynamic(
-  () => import('../src/components/HeroInteractiveImage'),
+  () => import('@/components/HeroInteractiveImage'),
   {
     ssr: false,
     loading: () => (
@@ -13,9 +13,9 @@ const HeroInteractiveImage = dynamic(
     ),
   }
 );
-import { SectionHeading } from '../src/components/SectionHeading';
-import { Button } from '../src/components/ui/button';
-import { defaultLocale } from '../lib/i18n';
+import { SectionHeading } from '@/components/SectionHeading';
+import { Button } from '@/components/ui/button';
+import { defaultLocale } from '@/lib/i18n';
 
 export default function MarketingPage() {
   const locale = defaultLocale;

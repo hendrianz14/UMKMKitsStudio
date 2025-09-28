@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { ImageUp } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 
 interface UploadDropzoneProps {
   onUpload: (files: File[]) => void;
