@@ -83,6 +83,7 @@ export function AuthProviderButtons({
             throw new Error("Firebase belum terkonfigurasi");
           }
           const provider = new GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: "select_account" });
           await signInWithPopup(auth, provider);
         },
       });
@@ -91,6 +92,21 @@ export function AuthProviderButtons({
     return list;
   }, [auth]);
 
+  const mapProviderError = (error: unknown) => {
+    const code = (error as { code?: string })?.code;
+    if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+      return null;
+    }
+
+    if (code === "auth/redirect-url-mismatch" || code === "auth/unauthorized-domain") {
+      return new Error(
+        "Konfigurasi Google OAuth belum sesuai (redirect_uri_mismatch). Hubungi tim untuk memperbaruinya."
+      );
+    }
+
+    return new Error("Gagal masuk dengan Google. Coba lagi nanti.");
+  };
+
   const handleClick = async (providerId: string, action: () => Promise<void> | void) => {
     if (disabled) return;
     try {
@@ -98,8 +114,13 @@ export function AuthProviderButtons({
       await action();
       await onSuccess?.(providerId);
     } catch (error) {
-      const err = error instanceof Error ? error : new Error("Gagal masuk");
-      onError?.(err, providerId);
+      const mapped = mapProviderError(error);
+      if (mapped) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[auth] Provider login error", error);
+        }
+        onError?.(mapped, providerId);
+      }
     } finally {
       setLoadingProvider(null);
     }
@@ -115,9 +136,9 @@ export function AuthProviderButtons({
         <Button
           key={provider.id}
           type="button"
-          variant="secondary"
+          variant="outline"
           size="lg"
-          className="w-full justify-center border border-primary/30 bg-[#0f172a] text-primary-foreground hover:bg-[#1f2a44]"
+          className="w-full justify-center gap-3 border border-border bg-background/60 text-foreground hover:bg-background"
           disabled={disabled || loadingProvider !== null}
           onClick={() => void handleClick(provider.id, provider.onClick)}
         >

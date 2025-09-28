@@ -2,13 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { doc, onSnapshot, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import type { Route } from "next";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { MailCheck } from "lucide-react";
 
 import AuthGate from "@/components/auth/AuthGate";
 import { CreditBadge } from "@/components/credit-badge";
 import { OnboardingModal, type OnboardingAnswers } from "@/components/onboarding/OnboardingModal";
 import { Button } from "@/components/ui/button";
 import { CardX, CardXHeader } from "@/components/ui/cardx";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { getFirebaseAuth, getFirebaseFirestore } from "@/lib/firebase-client";
 
@@ -27,12 +31,29 @@ const CREDIT_COST: Record<string, number> = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [jobs, setJobs] = useState<JobItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const credits = 320;
   const [user, setUser] = useState<User | null>(null);
-  const [userDoc, setUserDoc] = useState<{ onboardingCompleted?: boolean; onboarding?: OnboardingAnswers } | null>(null);
+  const [userDoc, setUserDoc] = useState<
+    | {
+        onboardingCompleted?: boolean;
+        onboarding?: {
+          type?: OnboardingAnswers["userType"];
+          purpose?: string;
+          industry?: string;
+          source?: string;
+        };
+      }
+    | null
+  >(null);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [dismissedOnboarding, setDismissedOnboarding] = useState(false);
+  const [showVerificationNotice, setShowVerificationNotice] = useState(false);
 
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_API_BASE;
@@ -78,6 +99,40 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [user]);
 
+  const onboardingDefaults = useMemo<OnboardingAnswers | undefined>(() => {
+    const onboarding = userDoc?.onboarding;
+    if (!onboarding) return undefined;
+    return {
+      userType: onboarding.type === "team" ? "team" : "personal",
+      goal: onboarding.purpose ?? "",
+      businessType: onboarding.industry ?? "",
+      source: onboarding.source ?? "",
+    };
+  }, [userDoc?.onboarding]);
+
+  const shouldPromptOnboarding = useMemo(() => {
+    return Boolean(user && userDoc && userDoc.onboardingCompleted !== true);
+  }, [user, userDoc]);
+
+  useEffect(() => {
+    if (shouldPromptOnboarding && !dismissedOnboarding) {
+      setIsOnboardingOpen(true);
+    } else if (!shouldPromptOnboarding) {
+      setIsOnboardingOpen(false);
+      setDismissedOnboarding(false);
+    }
+  }, [shouldPromptOnboarding, dismissedOnboarding]);
+
+  useEffect(() => {
+    const flag = searchParams?.get("verification");
+    if (flag === "check-email") {
+      setShowVerificationNotice(true);
+      if (pathname) {
+        router.replace(pathname as Route, { scroll: false });
+      }
+    }
+  }, [pathname, router, searchParams]);
+
   const handleOnboardingSave = async (answers: OnboardingAnswers) => {
     const firestore = getFirebaseFirestore();
     if (!firestore || !user) return;
@@ -85,10 +140,18 @@ export default function DashboardPage() {
       doc(firestore, "users", user.uid),
       {
         onboardingCompleted: true,
-        onboarding: answers,
+        onboarding: {
+          type: answers.userType,
+          purpose: answers.goal,
+          industry: answers.businessType,
+          source: answers.source,
+        },
+        updatedAt: serverTimestamp(),
       },
       { merge: true }
     );
+    setIsOnboardingOpen(false);
+    setDismissedOnboarding(false);
   };
 
   const handleOnboardingSkip = async () => {
@@ -97,29 +160,37 @@ export default function DashboardPage() {
     await setDoc(
       doc(firestore, "users", user.uid),
       {
-        onboardingCompleted: true,
+        onboardingCompleted: false,
+        updatedAt: serverTimestamp(),
       },
       { merge: true }
     );
+    setDismissedOnboarding(true);
+    setIsOnboardingOpen(false);
   };
 
   const spendSummary = useMemo(() => {
     return jobs.reduce((total, job) => total + (CREDIT_COST[job.kind] ?? 0), 0);
   }, [jobs]);
 
-  const shouldShowOnboarding = Boolean(
-    user && userDoc && userDoc.onboardingCompleted !== true
-  );
-
   return (
     <AuthGate>
       <OnboardingModal
-        open={shouldShowOnboarding}
-        defaultValues={userDoc?.onboarding as OnboardingAnswers | undefined}
+        open={isOnboardingOpen}
+        defaultValues={onboardingDefaults}
         onSave={handleOnboardingSave}
         onSkip={handleOnboardingSkip}
       />
       <div className="space-y-10">
+        {showVerificationNotice ? (
+          <Alert className="border-primary/40 bg-primary/10">
+            <MailCheck className="h-4 w-4 text-primary" aria-hidden="true" />
+            <div>
+              <AlertTitle>Verifikasi email</AlertTitle>
+              <AlertDescription>Periksa email untuk verifikasi.</AlertDescription>
+            </div>
+          </Alert>
+        ) : null}
         <div className="space-y-4">
           <h1 className="text-3xl font-semibold text-foreground">Dasbor kreatif Anda</h1>
           <p className="text-sm text-muted-foreground">

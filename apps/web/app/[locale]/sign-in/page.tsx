@@ -10,6 +10,7 @@ import { AuthProviderButtons } from "@/components/auth/AuthProviderButtons";
 import { EmailField, PasswordField } from "@/components/auth/AuthFormParts";
 import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { clientEnvFlags } from "@/lib/env-flags-client";
 import { getFirebaseAuth } from "@/lib/firebase-client";
 import { ensureUserDoc } from "@/lib/user-profile";
@@ -46,7 +47,7 @@ export default function SignInPage() {
     () => ({
       "auth/user-not-found": "Email belum terdaftar.",
       "auth/wrong-password": "Password salah.",
-      "auth/too-many-requests": "Terlalu banyak percobaan. Coba beberapa saat lagi.",
+      "auth/too-many-requests": "Terlalu banyak percobaan. Coba lagi nanti.",
       "auth/invalid-credential": "Kredensial tidak valid.",
     }),
     []
@@ -139,8 +140,7 @@ export default function SignInPage() {
         <AuthProviderButtons
           onSuccess={handleEnsureUser}
           onError={(err) => {
-            const firebaseError = err as { code?: string };
-            setError(mapError(firebaseError.code));
+            setError(err.message || mapError((err as { code?: string }).code));
           }}
         />
         <div className="relative flex items-center gap-3 text-xs text-muted-foreground">
@@ -172,10 +172,13 @@ export default function SignInPage() {
             </Link>
           </div>
           {error ? (
-            <div className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertCircle className="mt-0.5 h-4 w-4" aria-hidden="true" />
-              <span>{error}</span>
-            </div>
+            <Alert variant="destructive" className="w-full">
+              <AlertCircle className="h-4 w-4" aria-hidden="true" />
+              <div>
+                <AlertTitle>Gagal masuk</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </div>
+            </Alert>
           ) : null}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (

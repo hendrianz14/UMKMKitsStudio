@@ -5,17 +5,34 @@
 :root {
   color-scheme: dark;
   --nav-h: 64px;
-  --background: #0b0f1a;
-  --surface: #0f172a;
-  --text-primary: #e2e8f0;
-  --text-muted: rgba(226, 232, 240, 0.64);
-  --primary: #3b82f6;
-  --primary-foreground: #0b1220;
+  --background: 224 41% 7%;
+  --foreground: 214 32% 91%;
+  --card: 222 47% 11%;
+  --card-foreground: 214 32% 91%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 214 32% 91%;
+  --surface: 222 47% 11%;
+  --surface-foreground: 214 32% 91%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 224 41% 16%;
+  --accent-foreground: 214 32% 91%;
+  --border: 217 33% 24%;
+  --input: 217 33% 24%;
+  --ring: 221 83% 53%;
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 222 47% 17%;
+  --secondary-foreground: 214 32% 91%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+  --text-primary: hsl(var(--foreground));
+  --text-muted: hsl(var(--muted-foreground));
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
   --shadow-soft: 0 30px 80px -40px rgba(59, 130, 246, 0.45);
-
-
 }
 
 @media (min-width: 1024px) {
@@ -30,12 +47,31 @@ html {
 
 [data-theme='light'] {
   color-scheme: light;
-  --background: #ffffff;
-  --surface: #f8fafc;
-  --text-primary: #0f172a;
-  --text-muted: rgba(15, 23, 42, 0.68);
-  --primary: #3b82f6;
-  --primary-foreground: #f8fafc;
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --card: 210 40% 98%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --surface: 210 40% 98%;
+  --surface-foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 20% 45%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+  --border: 215 16% 87%;
+  --input: 215 16% 87%;
+  --ring: 221 83% 53%;
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+  --text-primary: hsl(var(--foreground));
+  --text-muted: hsl(var(--muted-foreground));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -49,7 +85,7 @@ html {
 }
 
 body {
-  @apply bg-[var(--background)] text-[var(--text-primary)] antialiased;
+  @apply bg-background text-foreground antialiased;
 }
 
 a {
@@ -64,6 +100,21 @@ a {
 :focus-visible {
   outline: 2px solid rgba(99, 102, 241, 0.85);
   outline-offset: 3px;
+}
+
+::placeholder {
+  color: hsl(var(--muted-foreground));
+  opacity: 0.9;
+}
+
+select,
+input,
+textarea {
+  color: hsl(var(--foreground));
+}
+
+.btn-primary {
+  @apply bg-primary text-white hover:bg-primary/90 disabled:opacity-60;
 }
 
 @layer utilities {

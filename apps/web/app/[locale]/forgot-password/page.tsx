@@ -8,6 +8,7 @@ import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { EmailField } from "@/components/auth/AuthFormParts";
 import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { clientEnvFlags } from "@/lib/env-flags-client";
 import { getFirebaseAuth } from "@/lib/firebase-client";
 import {
@@ -21,7 +22,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [missing, setMissing] = useState<FirebaseEnvKey[]>(collectMissingFirebaseEnvKeys());
   const auth = getFirebaseAuth();
 
@@ -37,7 +38,7 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    setSuccess(false);
+    setSuccessMessage(null);
     const currentAuth = getFirebaseAuth();
     if (!currentAuth) {
       const missingKeys = collectMissingFirebaseEnvKeys(clientEnvFlags());
@@ -51,18 +52,35 @@ export default function ForgotPasswordPage() {
     }
     setLoading(true);
     try {
-      const { sendPasswordResetEmail } = await import("firebase/auth");
-      await sendPasswordResetEmail(currentAuth, email);
-      setSuccess(true);
-    } catch (err) {
-      const firebaseError = err as { code?: string };
-      if (firebaseError.code === "auth/user-not-found") {
-        setError("Email belum terdaftar.");
-      } else if (firebaseError.code === "auth/invalid-email") {
-        setError("Email tidak valid.");
-      } else {
-        setError("Gagal mengirim tautan reset password. Coba lagi nanti.");
+      const response = await fetch("/api/auth/request-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.status === 429) {
+        const payload = (await response.json().catch(() => ({}))) as {
+          retryAfterMinutes?: number;
+        };
+        const minutes = Number(payload.retryAfterMinutes ?? 0);
+        const retryText = minutes > 0 ? `dalam ${minutes} menit` : "nanti";
+        setError(`Sudah ada permintaan baru-baru ini. Coba lagi ${retryText}.`);
+        return;
       }
+
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+
+      if (!response.ok) {
+        setError("Gagal memproses permintaan. Coba lagi nanti.");
+        return;
+      }
+
+      setSuccessMessage(payload?.message ?? "Jika email terdaftar, kami kirim tautan reset.");
+    } catch (err) {
+      if (typeof window !== "undefined") {
+        console.error("[forgot-password] request error", err);
+      }
+      setError("Gagal memproses permintaan. Coba lagi nanti.");
     } finally {
       setLoading(false);
     }
@@ -105,17 +123,23 @@ export default function ForgotPasswordPage() {
             required
             placeholder="nama@brand.id"
           />
-          {success ? (
-            <div className="flex items-start gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-400">
-              <CheckCircle2 className="mt-0.5 h-4 w-4" aria-hidden="true" />
-              <span>Kami mengirim tautan reset. Periksa email Anda.</span>
-            </div>
+          {successMessage ? (
+            <Alert variant="success" className="w-full">
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              <div>
+                <AlertTitle>Permintaan diterima</AlertTitle>
+                <AlertDescription>{successMessage}</AlertDescription>
+              </div>
+            </Alert>
           ) : null}
           {error ? (
-            <div className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertCircle className="mt-0.5 h-4 w-4" aria-hidden="true" />
-              <span>{error}</span>
-            </div>
+            <Alert variant="destructive" className="w-full">
+              <AlertCircle className="h-4 w-4" aria-hidden="true" />
+              <div>
+                <AlertTitle>Gagal mengirim tautan</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </div>
+            </Alert>
           ) : null}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
@@ -127,6 +151,9 @@ export default function ForgotPasswordPage() {
               "Kirim tautan reset"
             )}
           </Button>
+          <p className="text-xs text-muted-foreground">
+            Tautan reset berlaku sekitar 1 jam (aturan Firebase). Cek folder Spam/Promotions bila belum terlihat.
+          </p>
         </form>
         <CardXFooter>
           <Link
