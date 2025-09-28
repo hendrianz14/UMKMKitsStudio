@@ -1,5 +1,10 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth, setPersistence, browserLocalPersistence } from "firebase/auth";
+import {
+  getAuth,
+  type Auth,
+  setPersistence,
+  browserLocalPersistence,
+} from "firebase/auth";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
@@ -31,6 +36,8 @@ let auth: Auth | null = null;
 let storage: FirebaseStorage | null = null;
 let firestore: Firestore | null = null;
 let analyticsPromise: Promise<Analytics | null> | null = null;
+let persistencePromise: Promise<void> | null = null;
+let persistenceApplied = false;
 
 function ensureApp(): FirebaseApp | null {
   const missing = missingEnvKeys();
@@ -55,13 +62,18 @@ function ensureApp(): FirebaseApp | null {
       app = getApps()[0] ?? null;
     }
 
-    if (app && typeof window !== "undefined") {
-      try {
-        const firebaseAuth = getAuth(app);
-        auth ??= firebaseAuth;
-        void setPersistence(firebaseAuth, browserLocalPersistence);
-      } catch {
-        // no-op: persistence setting is best-effort
+    if (app) {
+      auth ??= getAuth(app);
+      if (typeof window !== "undefined" && auth && !persistenceApplied) {
+        persistencePromise ??= setPersistence(auth, browserLocalPersistence)
+          .catch((error) => {
+            if (process.env.NODE_ENV !== "production") {
+              console.warn("[firebase-client] Gagal mengatur persistence", error);
+            }
+          })
+          .finally(() => {
+            persistenceApplied = true;
+          });
       }
     }
   }
@@ -78,6 +90,17 @@ export function getFirebaseAuth() {
   if (!clientApp) return null;
   if (!auth) {
     auth = getAuth(clientApp);
+    if (typeof window !== "undefined" && !persistenceApplied) {
+      persistencePromise ??= setPersistence(auth, browserLocalPersistence)
+        .catch((error) => {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[firebase-client] Gagal mengatur persistence", error);
+          }
+        })
+        .finally(() => {
+          persistenceApplied = true;
+        });
+    }
   }
   return auth;
 }

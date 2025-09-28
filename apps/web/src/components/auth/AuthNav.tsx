@@ -24,6 +24,13 @@ const SIGN_UP_ROUTES = {
   en: "/en/sign-up",
 } satisfies Record<Locale, `/${Locale}/sign-up`>;
 
+const AUTH_ROUTE_SEGMENTS = [
+  "/sign-in",
+  "/sign-up",
+  "/forgot-password",
+  "/auth/action",
+] as const;
+
 type AuthState = "guest" | "authenticated";
 
 type AuthNavProps = {
@@ -69,6 +76,13 @@ export default function AuthNav({
     "inline-flex items-center justify-center rounded-xl px-3",
     layout === "column" ? "h-11 w-full" : "h-9"
   );
+  const shouldHideActions =
+    typeof pathname === "string" &&
+    AUTH_ROUTE_SEGMENTS.some((segment) => pathname.includes(segment));
+
+  if (shouldHideActions) {
+    return <div className={cn(containerClasses, className)} />;
+  }
 
   const handleNavigate = () => {
     onNavigate?.();
