@@ -1,42 +1,48 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { useParams, useRouter } from "next/navigation";
+
 import { getClientApp } from "@/lib/firebase-client";
 import { isValidLocale } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { useRouter, useParams } from "next/navigation";
+
+const SIGN_IN_ROUTES = {
+  id: "/id/sign-in",
+  en: "/en/sign-in"
+} satisfies Record<Locale, `/${Locale}/sign-in`>;
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const app = getClientApp();
   const router = useRouter();
   const { locale } = (useParams<{ locale?: string }>() ?? {}) as { locale?: string };
   const resolvedLocale = locale && isValidLocale(locale) ? (locale as Locale) : undefined;
-  const signInRoutes = {
-    id: "/id/sign-in",
-    en: "/en/sign-in"
-  } satisfies Record<Locale, `/${Locale}/sign-in`>;
-  const signInPath = resolvedLocale ? signInRoutes[resolvedLocale] : "/sign-in";
+  const signInPath = resolvedLocale ? SIGN_IN_ROUTES[resolvedLocale] : "/sign-in";
 
   useEffect(() => {
-    const redirectToSignIn = () => router.replace(signInPath);
-
     if (!app) {
-      setReady(false);
-      redirectToSignIn();
+      setIsAuthenticated(false);
+      router.replace(signInPath);
       return;
     }
-    return onAuthStateChanged(getAuth(app), (user) => {
-      if (!user) {
-        setReady(false);
-        redirectToSignIn();
-      } else {
-        setReady(true);
+
+    const auth = getAuth(app);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const authed = !!user;
+      setIsAuthenticated(authed);
+      if (!authed) {
+        router.replace(signInPath);
       }
     });
+
+    return () => unsubscribe();
   }, [app, router, signInPath]);
 
-  if (!ready) return null;
+  if (isAuthenticated !== true) {
+    return null;
+  }
+
   return <>{children}</>;
 }

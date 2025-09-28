@@ -24,6 +24,8 @@ const SIGN_UP_ROUTES = {
   en: "/en/sign-up",
 } satisfies Record<Locale, `/${Locale}/sign-up`>;
 
+type AuthState = "guest" | "authenticated";
+
 type AuthNavProps = {
   layout?: "row" | "column";
   className?: string;
@@ -37,7 +39,7 @@ export default function AuthNav({
   onNavigate,
   fallbackLocale
 }: AuthNavProps) {
-  const [authed, setAuthed] = useState<boolean | null>(null);
+  const [authState, setAuthState] = useState<AuthState>("guest");
   const app = getClientApp();
   const { locale } = (useParams<{ locale?: string }>() ?? {}) as { locale?: string };
   const pathname = usePathname();
@@ -48,13 +50,17 @@ export default function AuthNav({
 
   useEffect(() => {
     if (!app) {
-      setAuthed(false);
+      setAuthState("guest");
       return;
     }
-    return onAuthStateChanged(getAuth(app), (u) => setAuthed(!!u));
+
+    const auth = getAuth(app);
+    return onAuthStateChanged(auth, (user) => {
+      setAuthState(user ? "authenticated" : "guest");
+    });
   }, [app]);
 
-  const isLoggedIn = !!authed;
+  const isLoggedIn = authState === "authenticated";
   const containerClasses =
     layout === "column"
       ? "flex flex-col gap-3 w-full"
