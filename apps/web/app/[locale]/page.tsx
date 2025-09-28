@@ -20,7 +20,7 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
         id="home"
         className="scroll-mt-[calc(var(--nav-h)+12px)] pt-6 md:pt-10 lg:pt-12"
       >
-        <div className="container mx-auto">
+        <div className="container">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="space-y-8">
               <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
