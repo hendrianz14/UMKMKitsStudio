@@ -4,6 +4,7 @@
 
 :root {
   color-scheme: dark;
+  --nav-h: 64px;
   --background: #0b0f1a;
   --surface: #0f172a;
   --text-primary: #e2e8f0;
@@ -13,7 +14,8 @@
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
   --shadow-soft: 0 30px 80px -40px rgba(59, 130, 246, 0.45);
-  --nav-h: 64px;
+
+
 }
 
 @media (min-width: 1024px) {

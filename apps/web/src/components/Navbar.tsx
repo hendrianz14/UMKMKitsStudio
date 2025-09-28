@@ -1,30 +1,32 @@
 "use client";
 
-import Link from "next/link";
-import type { UrlObject } from "url";
-import { isValidLocale } from "../../lib/i18n";
-import type { Locale } from "../../lib/i18n";
-import { useParams, usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { Menu, Sparkles } from "lucide-react";
-import { motion, useScroll } from "framer-motion";
-import { Button } from "./ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
-import { LangToggle } from "../../components/lang-toggle";
-import { cn } from "../../lib/utils";
-import AuthNav from "./auth/AuthNav";
+
+import Link from 'next/link';
+import { useParams, usePathname } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { Menu, Sparkles } from 'lucide-react';
+import { motion, useScroll } from 'framer-motion';
+import { Button } from './ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
+import { LangToggle } from '../../components/lang-toggle';
+import { cn } from '../../lib/utils';
 
 const NAV_SECTIONS = [
-  { id: "hero", label: "Beranda" },
-  { id: "features", label: "Fitur" },
-  { id: "gallery", label: "Galeri" },
-  { id: "pricing", label: "Harga" }
-];
+  { id: 'home', label: 'Beranda' },
+  { id: 'features', label: 'Fitur' },
+  { id: 'gallery', label: 'Galeri' },
+  { id: 'pricing', label: 'Harga' }
+
+] as const;
 
 export function Navbar({ locale = "id" }: { locale?: Locale }) {
-  const params = (useParams<{ locale?: string }>() ?? {}) as { locale?: string };
+  const basePath: `/${string}` | '/' = params?.locale ? `/${params.locale}` : '/'
   const pathname = usePathname();
-  const [active, setActive] = useState("hero");
+
+  const params = useParams<{ locale?: string }>();
+  const base = params?.locale ? `/${params.locale}` : '';
+  const [active, setActive] = useState('home');
+
   const [isSheetOpen, setSheetOpen] = useState(false);
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
@@ -76,7 +78,7 @@ export function Navbar({ locale = "id" }: { locale?: Locale }) {
     >
       <div className="container flex h-full items-center justify-between gap-4">
         <Link
-          href={brandHref}
+          href={{ pathname: basePath, hash: item.id }}
           className="flex items-center gap-2 text-sm font-semibold tracking-tight"
         >
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-accent text-white shadow-lg shadow-blue-600/40">
@@ -89,7 +91,9 @@ export function Navbar({ locale = "id" }: { locale?: Locale }) {
             {navItems.map((item) => (
               <Link
                 key={item.id}
-                href={item.id === "hero" ? { pathname: navPathBase } : { pathname: navPathBase, hash: item.id }}
+
+                href={`${base}/#${item.id}`}
+
                 className={cn(
                   "relative px-2 py-1 text-[var(--text-muted)] transition-colors hover:text-white",
                   active === item.id && "text-white"
@@ -135,9 +139,9 @@ export function Navbar({ locale = "id" }: { locale?: Locale }) {
                         onClick={() => setSheetOpen(false)}
                         asChild
                       >
-                        <Link href={item.id === "hero" ? { pathname: navPathBase } : { pathname: navPathBase, hash: item.id }}>
-                          {item.label}
-                        </Link>
+
+                        <Link href={{ pathname: basePath, hash: item.id }}>{item.label}</Link>
+
                       </Button>
                     ))
                   : null}

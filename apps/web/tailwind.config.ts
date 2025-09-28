@@ -14,9 +14,12 @@ const config: Config = {
     container: {
       center: true,
       padding: {
-        DEFAULT: '1.5rem',
-        sm: '2rem',
-        lg: '2.5rem'
+        DEFAULT: '1rem',
+        sm: '1.25rem',
+        md: '1.5rem',
+        lg: '2rem',
+        xl: '3rem',
+        '2xl': '4rem'
       },
       screens: {
         '2xl': '80rem'
@@ -53,7 +56,7 @@ const config: Config = {
         }
       },
       fontFamily: {
-        sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
+        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['"Clash Display"', ...defaultTheme.fontFamily.sans]
       },
       borderRadius: {

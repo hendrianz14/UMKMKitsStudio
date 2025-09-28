@@ -16,32 +16,39 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
 
   return (
     <div className="space-y-28">
-      <section id="hero" className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="space-y-8">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            {locale === 'id' ? 'Studio AI untuk UMKM' : 'AI Studio for F&B brands'}
-          </span>
-          <h1 className="font-display text-4xl leading-tight text-white md:text-6xl">{t('heroTitle')}</h1>
-          <p className="max-w-xl text-lg text-[var(--text-muted)]">{t('heroSubtitle')}</p>
-          <div className="flex flex-wrap items-center gap-4">
-            <Button size="lg" asChild>
-              <Link href={`/${locale}/sign-up`}>{t('cta')}</Link>
-            </Button>
-            <Button size="lg" variant="secondary" asChild>
-              <Link href={`/${locale}/editor`}>
-                {locale === 'id' ? 'Buka Editor' : 'Open Editor'}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <p className="text-sm text-[var(--text-muted)]">
-              {locale === 'id' ? 'Tanpa kartu kredit • Demo gratis 3 menit' : 'No credit card • Try the 3-minute demo'}
-            </p>
+      <section
+        id="home"
+        className="scroll-mt-[calc(var(--nav-h)+12px)] pt-6 md:pt-10 lg:pt-12"
+      >
+        <div className="container mx-auto">
+          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="space-y-8">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+                {locale === 'id' ? 'Studio AI untuk UMKM' : 'AI Studio for F&B brands'}
+              </span>
+              <h1 className="font-display text-4xl leading-tight text-white md:text-6xl">{t('heroTitle')}</h1>
+              <p className="max-w-xl text-lg text-[var(--text-muted)]">{t('heroSubtitle')}</p>
+              <div className="flex flex-wrap items-center gap-4">
+                <Button size="lg" asChild>
+                  <Link href={`/${locale}/sign-up`}>{t('cta')}</Link>
+                </Button>
+                <Button size="lg" variant="secondary" asChild>
+                  <Link href={`/${locale}/editor`}>
+                    {locale === 'id' ? 'Buka Editor' : 'Open Editor'}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <p className="text-sm text-[var(--text-muted)]">
+                  {locale === 'id' ? 'Tanpa kartu kredit • Demo gratis 3 menit' : 'No credit card • Try the 3-minute demo'}
+                </p>
+              </div>
+            </div>
+            <HeroInteractiveImageNoSSR
+              src="https://images.unsplash.com/photo-1521986329282-0436c1b74404?auto=format&fit=crop&w=1600&q=80"
+              className="ml-auto w-full max-w-[720px]"
+            />
           </div>
         </div>
-        <HeroInteractiveImageNoSSR
-          src="https://images.unsplash.com/photo-1521986329282-0436c1b74404?auto=format&fit=crop&w=1600&q=80"
-          className="w-full max-w-[720px] ml-auto"
-        />
       </section>
 
       <section
