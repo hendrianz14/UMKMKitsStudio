@@ -51,7 +51,10 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
         </div>
       </section>
 
-      <section id="features" className="space-y-12">
+      <section
+        id="features"
+        className="space-y-12 scroll-mt-[calc(var(--nav-h)+12px)]"
+      >
         <SectionHeading
           eyebrow={locale === 'id' ? 'Fitur Premium' : 'Premium Toolkit'}
           title={locale === 'id' ? 'Workflow lengkap untuk tim konten modern' : 'An end-to-end workflow for modern content teams'}
@@ -65,7 +68,10 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
         <FeatureGridNoSSR />
       </section>
 
-      <section id="gallery" className="space-y-12">
+      <section
+        id="gallery"
+        className="space-y-12 scroll-mt-[calc(var(--nav-h)+12px)]"
+      >
         <SectionHeading
           eyebrow="Before / After"
           title={locale === 'id' ? 'Transformasi visual detik-detik' : 'Visual transformations in seconds'}
@@ -79,7 +85,10 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
         <BeforeAfterNoSSR />
       </section>
 
-      <section id="pricing" className="space-y-12">
+      <section
+        id="pricing"
+        className="space-y-12 scroll-mt-[calc(var(--nav-h)+12px)]"
+      >
         <SectionHeading
           eyebrow={locale === 'id' ? 'Harga Transparan' : 'Transparent Pricing'}
           title={locale === 'id' ? 'Paket fleksibel sesuai pertumbuhan' : 'Flexible tiers for every growth stage'}

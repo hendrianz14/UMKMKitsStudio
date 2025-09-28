@@ -22,8 +22,10 @@ export default function MarketingPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-white">
+
       <NavbarNoSSR locale={locale} showSections />
       <main className="relative">
+
         <div className="pointer-events-none absolute inset-0 -z-10 bg-radial-hero" aria-hidden />
         <section
           id="home"
@@ -62,7 +64,10 @@ export default function MarketingPage() {
           </div>
         </section>
 
-        <section id="features" className="container space-y-12 pb-28">
+        <section
+          id="features"
+          className="container space-y-12 pb-28 scroll-mt-[calc(var(--nav-h)+12px)]"
+        >
           <SectionHeading
             eyebrow="Fitur Premium"
             title="Satu studio untuk ide, produksi, dan distribusi konten"
@@ -71,7 +76,10 @@ export default function MarketingPage() {
           <FeatureGridNoSSR />
         </section>
 
-        <section id="gallery" className="container space-y-12 pb-28">
+        <section
+          id="gallery"
+          className="container space-y-12 pb-28 scroll-mt-[calc(var(--nav-h)+12px)]"
+        >
           <SectionHeading
             eyebrow="Before / After"
             title="Transformasi visual dalam hitungan detik"
@@ -80,7 +88,10 @@ export default function MarketingPage() {
           <BeforeAfterNoSSR />
         </section>
 
-        <section id="pricing" className="container space-y-12 pb-28">
+        <section
+          id="pricing"
+          className="container space-y-12 pb-28 scroll-mt-[calc(var(--nav-h)+12px)]"
+        >
           <SectionHeading
             eyebrow="Harga Transparan"
             title="Paket fleksibel untuk semua fase pertumbuhan"
