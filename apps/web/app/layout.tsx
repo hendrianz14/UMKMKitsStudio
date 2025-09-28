@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import type { ReactNode } from "react";
+
+import { cn } from "../lib/utils";
 import "../styles/globals.css";
 import "sonner/dist/styles.css";
 
@@ -17,16 +20,14 @@ export const metadata: Metadata = {
 // (opsional) kalau tidak butuh, hapus baris dynamic di bawah
 // export const dynamic = "force-dynamic";
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="id" className="dark" suppressHydrationWarning>
-      <body
-        className={`min-h-dvh bg-background text-foreground antialiased font-sans ${fontSans.variable}`}
-      >
+    <html
+      lang="id"
+      suppressHydrationWarning
+      className={cn("dark", fontSans.variable)}
+    >
+      <body className="min-h-dvh bg-background text-foreground antialiased font-sans">
         <main className="pt-[var(--nav-h)]">{children}</main>
       </body>
     </html>

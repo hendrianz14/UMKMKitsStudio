@@ -56,7 +56,7 @@ const config: Config = {
         }
       },
       fontFamily: {
-        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         display: ['"Clash Display"', ...defaultTheme.fontFamily.sans]
       },
       borderRadius: {
