@@ -1,5 +1,5 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+import { initializeApp, type FirebaseApp, getApps } from 'firebase/app';
+import { getAuth, type Auth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
@@ -18,30 +18,43 @@ const requiredEnv = [
   'NEXT_PUBLIC_FIREBASE_APP_ID'
 ] as const;
 
-// function hasEnv() {
-//   return requiredEnv.every((key) => Boolean(process.env[key]));
-// }
 function missingEnv() {
   return requiredEnv.filter((key) => !process.env[key]);
 }
+
 function ensureApp(): FirebaseApp | null {
-  if (!hasEnv()) {
-    if (process.env.NODE_ENV !== 'production') {
-      //console.warn('[firebase-client] Firebase environment variables belum lengkap; inisialisasi dilewati.');
-       console.error('[firebase-client] Missing ENV:', missingEnv().join(', '));
-    }
+  const missing = missingEnv();
+  if (missing.length) {
+    console.error('[firebase-client] Missing ENV:', missing.join(', '));
     return null;
   }
 
   if (!app) {
-    app = initializeApp({
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    const config = {
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
       measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-    });
+    };
+    if (!getApps().length) {
+      app = initializeApp(config);
+    } else {
+      app = getApps()[0] ?? null;
+    }
+
+    if (app && typeof window !== 'undefined') {
+      try {
+        const firebaseAuth = auth ?? getAuth(app);
+        auth = firebaseAuth;
+        void setPersistence(firebaseAuth, browserLocalPersistence);
+      } catch (error) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[firebase-client] Failed setting persistence', error);
+        }
+      }
+    }
   }
 
   return app;
@@ -92,8 +105,5 @@ export async function getFirebaseAnalytics(): Promise<Analytics | null> {
       });
   }
   return analyticsPromise;
-}
-function hasEnv() {
-  return requiredEnv.every((key) => Boolean(process.env[key]));
 }
 

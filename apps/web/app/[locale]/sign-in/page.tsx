@@ -3,37 +3,85 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { CardX, CardXFooter, CardXHeader } from '../../../components/ui/cardx';
 import { getFirebaseAuth } from '../../../lib/firebase-client';
 
+async function readEnvFlags(): Promise<string[]> {
+  try {
+    const res = await fetch('/api/env-check', { cache: 'no-store' });
+    const json = await res.json();
+    const missing: string[] = [];
+    if (!json?.flags?.API_KEY) missing.push('NEXT_PUBLIC_FIREBASE_API_KEY');
+    if (!json?.flags?.AUTH_DOMAIN) missing.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN');
+    if (!json?.flags?.PROJECT_ID) missing.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
+    if (!json?.flags?.STORAGE_BUCKET) missing.push('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET');
+    if (!json?.flags?.APP_ID) missing.push('NEXT_PUBLIC_FIREBASE_APP_ID');
+    return missing;
+  } catch {
+    return [];
+  }
+}
+
 export default function SignInPage() {
   const { locale } = useParams<{ locale: string }>();
   const t = useTranslations('auth');
+  const auth = getFirebaseAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [missing, setMissing] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    if (!auth) {
+      readEnvFlags().then(setMissing);
+    }
+  }, [auth]);
+
+  if (!auth) {
+    return (
+      <div className="container max-w-lg mx-auto py-16">
+        <h1 className="text-xl font-semibold mb-2">Konfigurasi Firebase belum lengkap</h1>
+        <p className="text-sm text-muted-foreground">
+          Pastikan variable berikut diisi di Vercel (Production/Preview) atau <code>.env.local</code> pada <code>apps/web/</code>,{' '}
+          lalu redeploy/jalankan ulang:
+        </p>
+        <ul className="mt-3 list-disc list-inside text-sm">
+          {(missing ?? []).map((key) => (
+            <li key={key}>
+              <code>{key}</code>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Cek cepat: <a className="underline" href="/api/env-check" target="_blank" rel="noreferrer">/api/env-check</a>
+        </p>
+      </div>
+    );
+  }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const auth = getFirebaseAuth();
-    if (!auth) {
+    const currentAuth = getFirebaseAuth();
+    if (!currentAuth) {
       setError('Konfigurasi Firebase belum lengkap.');
       return;
     }
     setLoading(true);
     try {
       const { signInWithEmailAndPassword } = await import('firebase/auth');
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(currentAuth, email, password);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Gagal masuk.');
     } finally {
       setLoading(false);
     }
   };
+
+  const disabled = loading || !auth;
 
   return (
     <div className="container mx-auto max-w-lg py-16">
@@ -70,7 +118,7 @@ export default function SignInPage() {
             />
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={disabled}>
             {loading ? 'Memproses...' : t('signIn')}
           </Button>
         </form>
