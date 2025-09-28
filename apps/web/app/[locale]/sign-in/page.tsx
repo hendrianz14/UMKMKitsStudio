@@ -1,13 +1,16 @@
 'use client';
 
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { CardX, CardXFooter, CardXHeader } from '../../../components/ui/cardx';
 import { getFirebaseAuth } from '../../../lib/firebase-client';
 
-export default function SignInPage(props: any) {
-  const params = props.params as { locale: string };
+export default function SignInPage() {
+  const { locale } = useParams<{ locale: string }>();
   const t = useTranslations('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,43 +36,53 @@ export default function SignInPage(props: any) {
   };
 
   return (
-    <div className="mx-auto max-w-md rounded-3xl border border-cacao/10 bg-white/80 p-8 shadow-soft">
-      <h1 className="text-2xl font-semibold text-charcoal">{t('signIn')}</h1>
-      <p className="mt-2 text-sm text-charcoal/70">
-        Masuk untuk mengakses dashboard dan galeri aset Anda.
-      </p>
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <label className="block text-sm font-medium text-charcoal">
-          Email
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="mt-1 w-full rounded-2xl border border-cacao/20 bg-white px-4 py-3 text-base text-charcoal shadow-sm focus:border-cacao focus:outline-none"
-          />
-        </label>
-        <label className="block text-sm font-medium text-charcoal">
-          Password
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="mt-1 w-full rounded-2xl border border-cacao/20 bg-white px-4 py-3 text-base text-charcoal shadow-sm focus:border-cacao focus:outline-none"
-          />
-        </label>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? 'Memproses...' : t('signIn')}
-        </Button>
-      </form>
-      <div className="mt-6 text-center text-sm text-charcoal/70">
-        Belum punya akun?{' '}
-        <Link href={`/${params.locale}/sign-up`} className="font-semibold text-cacao">
-          {t('signUp')}
-        </Link>
-      </div>
+    <div className="container mx-auto max-w-lg py-16">
+      <CardX tone="surface" padding="lg">
+        <CardXHeader
+          title={t('signIn')}
+          subtitle="Masuk untuk mengakses dashboard dan galeri aset Anda."
+        />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium text-foreground">
+              Email
+            </label>
+            <Input
+              id="email"
+              type="email"
+              required
+              value={email}
+              placeholder="nama@brand.id"
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm font-medium text-foreground">
+              Password
+            </label>
+            <Input
+              id="password"
+              type="password"
+              required
+              value={password}
+              placeholder="••••••••"
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </div>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? 'Memproses...' : t('signIn')}
+          </Button>
+        </form>
+        <CardXFooter>
+          <p className="text-sm text-muted-foreground">
+            Belum punya akun?{' '}
+            <Link href={`/${locale}/sign-up`} className="font-medium text-primary hover:text-primary/90">
+              {t('signUp')}
+            </Link>
+          </p>
+        </CardXFooter>
+      </CardX>
     </div>
   );
 }

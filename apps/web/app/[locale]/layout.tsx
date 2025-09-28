@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { notFound } from 'next/navigation';
-import { ReactNode } from 'react';
+import { ReactNode, use } from 'react';
 import { unstable_setRequestLocale } from 'next-intl/server';
 import { isValidLocale, locales } from '../../lib/i18n';
-import { Navbar } from '../../src/components/Navbar';
-import { Footer } from '../../src/components/Footer';
+import { FooterNoSSR, NavbarNoSSR } from '../../src/components/no-ssr';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'UMKM Kits Studio',
@@ -23,7 +24,7 @@ export default async function LocaleLayout({
   children: ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
+  const { locale } = use(params);
 
   if (!isValidLocale(locale)) {
     notFound();
@@ -35,10 +36,10 @@ export default async function LocaleLayout({
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <div className="flex min-h-screen flex-col bg-background text-[var(--text-primary)]" data-locale={locale}>
-        <Navbar locale={locale} showSections={false} />
+      <div className="flex min-h-dvh flex-col" data-locale={locale}>
+        <NavbarNoSSR locale={locale} showSections={false} />
         <main className="container flex-1 pb-24 pt-28">{children}</main>
-        <Footer />
+        <FooterNoSSR />
       </div>
     </NextIntlClientProvider>
   );

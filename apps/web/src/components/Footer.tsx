@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Mail, Send, Twitter, Youtube } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -35,6 +35,12 @@ const columns = [
 ];
 
 export function Footer() {
+  const [year, setYear] = useState('');
+
+  useEffect(() => {
+    setYear(new Date().getFullYear().toString());
+  }, []);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -95,7 +101,7 @@ export function Footer() {
         </div>
         <div className="mt-12 grid gap-6 border-t border-white/10 pt-8 md:grid-cols-[minmax(0,1fr)_360px]">
           <p className="text-sm text-[var(--text-muted)]">
-            © {new Date().getFullYear()} UMKM Kits Studio. Seluruh hak cipta dilindungi.
+            © <span suppressHydrationWarning>{year}</span> UMKM Kits Studio. Seluruh hak cipta dilindungi.
           </p>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3 text-sm text-[var(--text-muted)] md:flex-row md:items-center">
             <label htmlFor="newsletter" className="md:w-40">

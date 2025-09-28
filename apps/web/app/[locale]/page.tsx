@@ -1,15 +1,14 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { Hero3D } from '../../src/components/Hero3D';
-import { FeatureGrid } from '../../src/components/FeatureGrid';
-import { BeforeAfter } from '../../src/components/BeforeAfter';
-import { PricingSection } from '../../src/components/PricingSection';
+import { use } from 'react';
+import HeroInteractiveImage from '../../src/components/HeroInteractiveImage';
+import { BeforeAfterNoSSR, FeatureGridNoSSR, PricingSectionNoSSR } from '../../src/components/no-ssr';
 import { SectionHeading } from '../../src/components/SectionHeading';
 import { Button } from '../../src/components/ui/button';
 
 export default async function LocaleLanding({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
+  const { locale } = use(params);
   const t = await getTranslations({ locale, namespace: 'common' });
 
   return (
@@ -36,7 +35,10 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
             </p>
           </div>
         </div>
-        <Hero3D />
+        <HeroInteractiveImage
+          src="https://images.unsplash.com/photo-1521986329282-0436c1b74404?auto=format&fit=crop&w=1600&q=80"
+          className="w-full max-w-[720px] ml-auto"
+        />
       </section>
 
       <section id="features" className="space-y-12">
@@ -50,7 +52,7 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
           }
           align="left"
         />
-        <FeatureGrid />
+        <FeatureGridNoSSR />
       </section>
 
       <section id="gallery" className="space-y-12">
@@ -64,7 +66,7 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
           }
           align="left"
         />
-        <BeforeAfter />
+        <BeforeAfterNoSSR />
       </section>
 
       <section id="pricing" className="space-y-12">
@@ -78,7 +80,7 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
           }
           align="left"
         />
-        <PricingSection locale={locale} />
+        <PricingSectionNoSSR locale={locale} />
       </section>
     </div>
   );

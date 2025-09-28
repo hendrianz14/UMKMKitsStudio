@@ -1,11 +1,10 @@
+"use client";
+
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { ArrowRight } from 'lucide-react';
-import { Navbar } from '../src/components/Navbar';
-import { Footer } from '../src/components/Footer';
-import { Hero3D } from '../src/components/Hero3D';
-import { FeatureGrid } from '../src/components/FeatureGrid';
-import { BeforeAfter } from '../src/components/BeforeAfter';
-import { PricingSection } from '../src/components/PricingSection';
+import { BeforeAfterNoSSR, FeatureGridNoSSR, FooterNoSSR, NavbarNoSSR, PricingSectionNoSSR } from '../src/components/no-ssr';
+const HeroInteractiveImage = dynamic(() => import('../src/components/HeroInteractiveImage'), { ssr: false });
 import { SectionHeading } from '../src/components/SectionHeading';
 import { Button } from '../src/components/ui/button';
 import { defaultLocale } from '../lib/i18n';
@@ -15,7 +14,7 @@ export default function MarketingPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-white">
-      <Navbar locale={locale} showSections />
+      <NavbarNoSSR locale={locale} showSections />
       <main className="relative pt-28">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-radial-hero" aria-hidden />
         <section id="hero" className="container grid items-center gap-12 pb-28 lg:grid-cols-[1.05fr_0.95fr]">
@@ -42,7 +41,10 @@ export default function MarketingPage() {
               <p className="text-sm text-[var(--text-muted)]">Tidak perlu kartu kredit • 3 menit onboarding</p>
             </div>
           </div>
-          <Hero3D />
+          <HeroInteractiveImage
+            src="https://images.unsplash.com/photo-1521986329282-0436c1b74404?auto=format&fit=crop&w=1600&q=80"
+            className="w-full max-w-[720px] ml-auto"
+          />
         </section>
 
         <section id="features" className="container space-y-12 pb-28">
@@ -51,7 +53,7 @@ export default function MarketingPage() {
             title="Satu studio untuk ide, produksi, dan distribusi konten"
             description="Workflow modern yang memadukan AI, template adaptif, dan automasi publikasi."
           />
-          <FeatureGrid />
+          <FeatureGridNoSSR />
         </section>
 
         <section id="gallery" className="container space-y-12 pb-28">
@@ -60,7 +62,7 @@ export default function MarketingPage() {
             title="Transformasi visual dalam hitungan detik"
             description="Bandingkan hasil Enhance AI kami dengan foto mentah pelanggan UMKM."
           />
-          <BeforeAfter />
+          <BeforeAfterNoSSR />
         </section>
 
         <section id="pricing" className="container space-y-12 pb-28">
@@ -69,7 +71,7 @@ export default function MarketingPage() {
             title="Paket fleksibel untuk semua fase pertumbuhan"
             description="Skalakan dengan kredit AI, workspace kolaboratif, dan support prioritas."
           />
-          <PricingSection locale={locale} />
+          <PricingSectionNoSSR locale={locale} />
         </section>
 
         <section id="editor-demo" className="container pb-32">
@@ -97,7 +99,7 @@ export default function MarketingPage() {
           </div>
         </section>
       </main>
-      <Footer />
+      <FooterNoSSR />
     </div>
   );
 }

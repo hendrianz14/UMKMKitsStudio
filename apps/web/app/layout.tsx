@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import { use } from 'react';
 import '../styles/globals.css';
 import 'sonner/dist/styles.css';
-import { Toaster } from 'sonner';
+import { cn } from '../lib/utils';
+import { ToasterClient } from '../components/ToasterClient';
+
+export const dynamic = 'force-dynamic';
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
@@ -11,12 +15,21 @@ export const metadata: Metadata = {
   description: 'Studio kreatif modern untuk UMKM kuliner dengan dukungan AI.'
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+  params
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale?: string }>;
+}) {
+  const resolvedParams = use(params);
+  const locale = resolvedParams?.locale ?? 'id';
+
   return (
-    <html lang="id" suppressHydrationWarning className={jakarta.variable}>
-      <body className="min-h-screen bg-background text-[var(--text-primary)] font-sans antialiased">
+    <html lang={locale} className={cn('dark', jakarta.variable)} suppressHydrationWarning>
+      <body className="min-h-dvh bg-background text-foreground font-sans antialiased">
         {children}
-        <Toaster richColors position="top-center" closeButton toastOptions={{ duration: 3500 }} />
+        <ToasterClient />
       </body>
     </html>
   );
