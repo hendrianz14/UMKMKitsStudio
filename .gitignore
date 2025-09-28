@@ -11,3 +11,5 @@ firebase/.firebase
 coverage
 .vitest
 artifacts
+apps/web/test-results
+apps/web/playwright-report

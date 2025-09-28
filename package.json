@@ -11,6 +11,13 @@
     "build:web": "pnpm -C apps/web build",
     "build:functions": "pnpm -C services/functions build",
     "test": "pnpm -r test",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "web:dev": "pnpm -C apps/web dev",
+    "web:build": "pnpm -C apps/web build",
+    "web:start": "pnpm -C apps/web start",
+    "web:snap": "npx playwright test -c apps/web/playwright.config.ts apps/web/tests/snapshot.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.2"
   }
 }
