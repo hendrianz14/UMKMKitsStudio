@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "../styles/globals.css";
 import "sonner/dist/styles.css";
+
+const fontSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "UMKM Kits Studio",
@@ -17,7 +24,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id" className="dark" suppressHydrationWarning>
-      <body className="min-h-dvh bg-background text-foreground">
+      <body
+        className={`min-h-dvh bg-background text-foreground antialiased font-sans ${fontSans.variable}`}
+      >
         {children}
       </body>
     </html>

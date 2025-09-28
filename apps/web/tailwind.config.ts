@@ -32,6 +32,7 @@ const config: Config = {
           DEFAULT: '#0F172A',
           light: '#F8FAFC'
         },
+        secondary: '#1E293B',
         text: {
           DEFAULT: '#E2E8F0',
           dark: '#0F172A'
@@ -52,7 +53,7 @@ const config: Config = {
         }
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
+        sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         display: ['"Clash Display"', ...defaultTheme.fontFamily.sans]
       },
       borderRadius: {
