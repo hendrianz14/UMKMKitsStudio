@@ -1,7 +1,5 @@
 "use client";
 
-import type { UrlObject } from "url";
-
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -30,10 +28,10 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
 
   const localeFromParams = params?.locale && isValidLocale(params.locale) ? params.locale : undefined;
   const resolvedLocale = localeFromParams ?? locale;
-  const basePath: `/${Locale}` | "/" = localeFromParams ? `/${localeFromParams}` : "/";
   const base: `/${Locale}` | "" = localeFromParams ? `/${localeFromParams}` : "";
-  const shouldShowSections =
-    showSections ?? (pathname === "/" || pathname === `${base || "/"}`);
+  const basePathString = base || "/";
+  const basePath = basePathString as Route;
+  const showMarketing = showSections ?? (pathname === "/" || pathname === basePathString);
   const [active, setActive] = useState("home");
 
   const [isSheetOpen, setSheetOpen] = useState(false);
@@ -46,7 +44,7 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
   }, [scrollY]);
 
   useEffect(() => {
-    if (!shouldShowSections) return;
+    if (!showMarketing) return;
     const sections = NAV_SECTIONS.map((item) => document.getElementById(item.id)).filter(Boolean) as HTMLElement[];
     if (!sections.length) return;
     const observer = new IntersectionObserver(
@@ -62,14 +60,17 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
     );
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
-  }, [shouldShowSections]);
+  }, [showMarketing]);
 
-  const navItems = useMemo(() => (shouldShowSections ? NAV_SECTIONS : []), [shouldShowSections]);
-  const marketingPathname = basePath as Route;
+  const navItems = useMemo(() => (showMarketing ? NAV_SECTIONS : []), [showMarketing]);
   const dashboardPath = (base ? `${base}/dashboard` : "/dashboard") as Route;
-  const brandHref: UrlObject = pathname?.startsWith(dashboardPath)
-    ? { pathname }
-    : { pathname: marketingPathname };
+  const brandHref = pathname?.startsWith(dashboardPath) ? (pathname as Route) : basePath;
+  const marketingHref = useMemo(
+    () =>
+      (id: (typeof NAV_SECTIONS)[number]["id"]) =>
+        `${base || ""}/#${id}` as Route,
+    [base]
+  );
 
   return (
     <motion.header
@@ -88,12 +89,12 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
           </span>
           <span className="text-base text-white">UMKM Kits Studio</span>
         </Link>
-        {shouldShowSections ? (
+        {showMarketing ? (
           <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
             {navItems.map((item) => (
               <Link
                 key={item.id}
-                href={{ pathname: marketingPathname, hash: item.id }}
+                href={marketingHref(item.id)}
                 className={cn(
                   "relative px-2 py-1 text-[var(--text-muted)] transition-colors hover:text-white",
                   active === item.id && "text-white"
@@ -130,7 +131,7 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
                 <SheetTitle className="text-left text-white">Menu</SheetTitle>
               </SheetHeader>
               <div className="mt-6 flex flex-col gap-3">
-                {shouldShowSections
+                {showMarketing
                   ? navItems.map((item) => (
                       <Button
                         key={item.id}
@@ -139,9 +140,7 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
                         onClick={() => setSheetOpen(false)}
                         asChild
                       >
-
-                        <Link href={{ pathname: marketingPathname, hash: item.id }}>{item.label}</Link>
-
+                        <Link href={marketingHref(item.id)}>{item.label}</Link>
                       </Button>
                     ))
                   : null}

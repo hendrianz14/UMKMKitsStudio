@@ -29,9 +29,9 @@ export default function MarketingPage() {
         <div className="pointer-events-none absolute inset-0 -z-10 bg-radial-hero" aria-hidden />
         <section
           id="home"
-          className="scroll-mt-[calc(var(--nav-h)+12px)] pt-6 md:pt-10 lg:pt-12 pb-28"
+          className="scroll-mt-[calc(var(--nav-h)+12px)] pt-6 md:pt-10 lg:pt-12"
         >
-          <div className="container mx-auto">
+          <div className="container">
             <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="space-y-8">
                 <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
