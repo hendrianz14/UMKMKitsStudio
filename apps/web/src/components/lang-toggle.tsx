@@ -4,7 +4,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 
 const SUPPORTED_LOCALES = ['id', 'en'] as const;
 

@@ -6,9 +6,9 @@ import {
   FeatureGridNoSSR,
   HeroInteractiveImageNoSSR,
   PricingSectionNoSSR
-} from '../../src/components/no-ssr';
-import { SectionHeading } from '../../src/components/SectionHeading';
-import { Button } from '../../src/components/ui/button';
+} from '@/components/no-ssr';
+import { SectionHeading } from '@/components/SectionHeading';
+import { Button } from '@/components/ui/button';
 
 export default async function LocaleLanding({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

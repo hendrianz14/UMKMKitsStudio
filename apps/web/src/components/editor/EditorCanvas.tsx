@@ -13,7 +13,7 @@ import {
 } from 'react';
 import { Rnd } from 'react-rnd';
 import { motion } from 'framer-motion';
-import { cn } from '../../../lib/utils';
+import { cn } from '@/lib/utils';
 
 export type LayerType = 'text' | 'image';
 

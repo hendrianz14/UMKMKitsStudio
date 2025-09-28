@@ -8,13 +8,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Menu, Sparkles } from "lucide-react";
 import { motion, useScroll } from "framer-motion";
 import type { Route } from "next";
-import { Button } from "./ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
-import { LangToggle } from "../../components/lang-toggle";
-import type { Locale } from "../../lib/i18n";
-import { isValidLocale } from "../../lib/i18n";
-import { cn } from "../../lib/utils";
-import AuthNav from "./auth/AuthNav";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { LangToggle } from "@/components/lang-toggle";
+import type { Locale } from "@/lib/i18n";
+import { isValidLocale } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import AuthNav from "@/components/auth/AuthNav";
 
 const NAV_SECTIONS = [
   { id: 'home', label: 'Beranda' },

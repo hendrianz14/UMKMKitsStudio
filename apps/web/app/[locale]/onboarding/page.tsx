@@ -4,10 +4,10 @@ export const dynamic = 'force-dynamic';
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Button } from '../../../components/ui/button';
-import { CardX } from '../../../components/ui/cardx';
-import { Input } from '../../../components/ui/input';
-import { CreditBadge } from '../../../components/credit-badge';
+import { Button } from '@/components/ui/button';
+import { CardX } from '@/components/ui/cardx';
+import { Input } from '@/components/ui/input';
+import { CreditBadge } from '@/components/credit-badge';
 
 export default function OnboardingPage() {
   const t = useTranslations('auth');

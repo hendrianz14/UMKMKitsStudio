@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { CardX, CardXFooter, CardXHeader } from '../../../components/ui/cardx';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { CardX, CardXFooter, CardXHeader } from '@/components/ui/cardx';
 import { clientEnvFlags } from '@/lib/env-flags-client';
 import { getFirebaseAuth } from '@/lib/firebase-client';
 

@@ -2,12 +2,12 @@
 
 import { type ReactNode } from 'react';
 import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Eye, EyeOff, Trash2 } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Slider } from '../ui/slider';
-import { useEditor, TextLayer, Layer } from './EditorCanvas';
-import { cn } from '../../../lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { useEditor, TextLayer, Layer } from '@/components/editor/EditorCanvas';
+import { cn } from '@/lib/utils';
 
 const FONT_OPTIONS = [
   'Plus Jakarta Sans',

@@ -3,11 +3,11 @@
 import { useMemo, useState } from 'react';
 import { createColumnHelper, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import Image from 'next/image';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
-import { useEditor } from './EditorCanvas';
-import { templates, type Template } from '../../../data/templates';
-import { cn } from '../../../lib/utils';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useEditor } from '@/components/editor/EditorCanvas';
+import { templates, type Template } from '@/data/templates';
+import { cn } from '@/lib/utils';
 
 const columnHelper = createColumnHelper<Template>();
 
