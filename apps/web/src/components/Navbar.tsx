@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Menu, Sparkles } from 'lucide-react';
 import { motion, useScroll } from 'framer-motion';
@@ -11,7 +11,7 @@ import { LangToggle } from '../../components/lang-toggle';
 import { cn } from '../../lib/utils';
 
 const NAV_SECTIONS = [
-  { id: 'hero', label: 'Beranda' },
+  { id: 'home', label: 'Beranda' },
   { id: 'features', label: 'Fitur' },
   { id: 'gallery', label: 'Galeri' },
   { id: 'pricing', label: 'Harga' }
@@ -19,7 +19,9 @@ const NAV_SECTIONS = [
 
 export function Navbar({ locale = 'id', showSections = true }: { locale?: string; showSections?: boolean }) {
   const pathname = usePathname();
-  const [active, setActive] = useState('hero');
+  const params = useParams<{ locale?: string }>();
+  const base = params?.locale ? `/${params.locale}` : '';
+  const [active, setActive] = useState('home');
   const [isSheetOpen, setSheetOpen] = useState(false);
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
@@ -73,9 +75,9 @@ export function Navbar({ locale = 'id', showSections = true }: { locale?: string
         {showSections ? (
           <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.id}
-                href={`#${item.id}`}
+                href={`${base}/#${item.id}`}
                 className={cn(
                   'relative px-2 py-1 text-[var(--text-muted)] transition-colors hover:text-white',
                   active === item.id && 'text-white'
@@ -89,7 +91,7 @@ export function Navbar({ locale = 'id', showSections = true }: { locale?: string
                   />
                 )}
                 {item.label}
-              </a>
+              </Link>
             ))}
           </nav>
         ) : (
@@ -129,7 +131,7 @@ export function Navbar({ locale = 'id', showSections = true }: { locale?: string
                         onClick={() => setSheetOpen(false)}
                         asChild
                       >
-                        <Link href={`#${item.id}` as never}>{item.label}</Link>
+                        <Link href={`${base}/#${item.id}`}>{item.label}</Link>
                       </Button>
                     ))
                   : null}

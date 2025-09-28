@@ -23,36 +23,43 @@ export default function MarketingPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-white">
       <NavbarNoSSR locale={locale} showSections />
-      <main className="relative pt-28">
+      <main className="relative">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-radial-hero" aria-hidden />
-        <section id="hero" className="container grid items-center gap-12 pb-28 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="space-y-8">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-              Studio AI untuk UMKM
-            </span>
-            <h1 className="max-w-xl font-display text-4xl leading-tight text-white md:text-6xl">
-              Visual interaktif & caption AI untuk scale up brand kuliner Anda
-            </h1>
-            <p className="max-w-xl text-lg text-[var(--text-muted)]">
-              Bangun storytelling makanan yang menggugah selera, tingkatkan engagement, dan kelola tim konten dari satu studio modern dengan aksen biru kosmik.
-            </p>
-            <div className="flex flex-wrap items-center gap-4">
-              <Button size="lg" asChild>
-                <Link href={`/${locale}/sign-up`}>Coba Gratis Sekarang</Link>
-              </Button>
-              <Button size="lg" variant="secondary" asChild>
-                <Link href="#editor-demo">
-                  Lihat Editor
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <p className="text-sm text-[var(--text-muted)]">Tidak perlu kartu kredit • 3 menit onboarding</p>
+        <section
+          id="home"
+          className="scroll-mt-[calc(var(--nav-h)+12px)] pt-6 md:pt-10 lg:pt-12 pb-28"
+        >
+          <div className="container mx-auto">
+            <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="space-y-8">
+                <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+                  Studio AI untuk UMKM
+                </span>
+                <h1 className="max-w-xl font-display text-4xl leading-tight text-white md:text-6xl">
+                  Visual interaktif & caption AI untuk scale up brand kuliner Anda
+                </h1>
+                <p className="max-w-xl text-lg text-[var(--text-muted)]">
+                  Bangun storytelling makanan yang menggugah selera, tingkatkan engagement, dan kelola tim konten dari satu studio modern dengan aksen biru kosmik.
+                </p>
+                <div className="flex flex-wrap items-center gap-4">
+                  <Button size="lg" asChild>
+                    <Link href={`/${locale}/sign-up`}>Coba Gratis Sekarang</Link>
+                  </Button>
+                  <Button size="lg" variant="secondary" asChild>
+                    <Link href="#editor-demo">
+                      Lihat Editor
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <p className="text-sm text-[var(--text-muted)]">Tidak perlu kartu kredit • 3 menit onboarding</p>
+                </div>
+              </div>
+              <HeroInteractiveImage
+                src="https://images.unsplash.com/photo-1521986329282-0436c1b74404?auto=format&fit=crop&w=1600&q=80"
+                className="ml-auto w-full max-w-[720px]"
+              />
             </div>
           </div>
-          <HeroInteractiveImage
-            src="https://images.unsplash.com/photo-1521986329282-0436c1b74404?auto=format&fit=crop&w=1600&q=80"
-            className="w-full max-w-[720px] ml-auto"
-          />
         </section>
 
         <section id="features" className="container space-y-12 pb-28">
