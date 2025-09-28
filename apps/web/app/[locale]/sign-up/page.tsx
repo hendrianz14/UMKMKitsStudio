@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getFirebaseAuth } from "@/lib/firebase-client";
 import { ensureUserDoc } from "@/lib/user-profile";
 import {
@@ -22,6 +23,11 @@ import {
   fetchMissingFirebaseEnvKeys,
   type FirebaseEnvKey,
 } from "@/lib/firebase-env-check";
+import {
+  isAllowedDomain,
+  isValidEmailFormat,
+  normalizeEmail,
+} from "@/lib/email";
 
 export default function SignUpPage() {
   const { locale } = useParams<{ locale: string }>();
@@ -72,13 +78,27 @@ export default function SignUpPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!trimmedName) {
       setError("Nama wajib diisi.");
+      return;
+    }
+    if (!isValidEmailFormat(normalizedEmail)) {
+      setError("Format email tidak valid.");
+      return;
+    }
+    if (!isAllowedDomain(normalizedEmail, ["gmail.com"])) {
+      setError("Gunakan email @gmail.com");
       return;
     }
     if (!passwordValid) {
       setError("Password belum memenuhi semua syarat.");
       return;
+    }
+    if (email !== normalizedEmail) {
+      setEmail(normalizedEmail);
     }
 
     const currentAuth = getFirebaseAuth();
@@ -100,17 +120,21 @@ export default function SignUpPage() {
         sendEmailVerification,
         updateProfile,
       } = await import("firebase/auth");
-      const credential = await createUserWithEmailAndPassword(currentAuth, email, password);
-      await updateProfile(credential.user, { displayName: name.trim() });
-      const verifyUrl = process.env.APP_URL ?? (typeof window !== "undefined" ? window.location.origin : undefined);
-      if (verifyUrl) {
-        await sendEmailVerification(credential.user, { url: verifyUrl });
+      const credential = await createUserWithEmailAndPassword(currentAuth, normalizedEmail, password);
+      await updateProfile(credential.user, { displayName: trimmedName });
+      const baseUrl =
+        process.env.APP_URL ??
+        process.env.NEXT_PUBLIC_APP_URL ??
+        (typeof window !== "undefined" ? window.location.origin : undefined);
+      const actionUrl = baseUrl ? `${baseUrl.replace(/\/$/, "")}/auth/action` : undefined;
+      if (actionUrl) {
+        await sendEmailVerification(credential.user, { url: actionUrl });
       } else {
         await sendEmailVerification(credential.user);
       }
-      await ensureUserDoc(credential.user, { name: name.trim() });
+      await ensureUserDoc(credential.user, { name: trimmedName });
       if (locale) {
-        router.replace(`/${locale}/dashboard`);
+        router.replace(`/${locale}/dashboard?verification=check-email`);
       }
     } catch (err) {
       if (typeof window !== "undefined") {
@@ -156,8 +180,7 @@ export default function SignUpPage() {
         <AuthProviderButtons
           onSuccess={handleProviderSuccess}
           onError={(error) => {
-            const firebaseError = error as { code?: string };
-            setError(mapError(firebaseError.code));
+            setError(error.message || mapError((error as { code?: string }).code));
           }}
         />
         <div className="relative flex items-center gap-3 text-xs text-muted-foreground">
@@ -193,10 +216,13 @@ export default function SignUpPage() {
             showStrength
           />
           {error ? (
-            <div className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertCircle className="mt-0.5 h-4 w-4" aria-hidden="true" />
-              <span>{error}</span>
-            </div>
+            <Alert variant="destructive" className="w-full">
+              <AlertCircle className="h-4 w-4" aria-hidden="true" />
+              <div>
+                <AlertTitle>Gagal mendaftar</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </div>
+            </Alert>
           ) : null}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (

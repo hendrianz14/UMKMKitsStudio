@@ -81,7 +81,7 @@ export default function AuthNav({
     AUTH_ROUTE_SEGMENTS.some((segment) => pathname.includes(segment));
 
   if (shouldHideActions) {
-    return <div className={cn(containerClasses, className)} />;
+    return null;
   }
 
   const handleNavigate = () => {

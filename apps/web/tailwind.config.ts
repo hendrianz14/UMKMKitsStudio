@@ -1,6 +1,9 @@
 import type { Config } from 'tailwindcss';
 import defaultTheme from 'tailwindcss/defaultTheme';
 
+const withOpacityValue = (variable: `--${string}`) =>
+  `hsl(var(${variable}) / <alpha-value>)`;
+
 const config: Config = {
   content: [
     './app/**/*.{ts,tsx}',
@@ -26,32 +29,46 @@ const config: Config = {
     },
     extend: {
       colors: {
-        background: {
-          DEFAULT: '#0B0F1A',
-          light: '#FFFFFF'
+        border: withOpacityValue('--border'),
+        input: withOpacityValue('--input'),
+        ring: withOpacityValue('--ring'),
+        background: withOpacityValue('--background'),
+        foreground: withOpacityValue('--foreground'),
+        card: {
+          DEFAULT: withOpacityValue('--card'),
+          foreground: withOpacityValue('--card-foreground')
         },
-        surface: {
-          DEFAULT: '#0F172A',
-          light: '#F8FAFC'
-        },
-        secondary: '#1E293B',
-        text: {
-          DEFAULT: '#E2E8F0',
-          dark: '#0F172A'
+        popover: {
+          DEFAULT: withOpacityValue('--popover'),
+          foreground: withOpacityValue('--popover-foreground')
         },
         primary: {
-          DEFAULT: '#3B82F6',
-          foreground: '#0B1220'
+          DEFAULT: withOpacityValue('--primary'),
+          foreground: withOpacityValue('--primary-foreground')
+        },
+        secondary: {
+          DEFAULT: withOpacityValue('--secondary'),
+          foreground: withOpacityValue('--secondary-foreground')
+        },
+        muted: {
+          DEFAULT: withOpacityValue('--muted'),
+          foreground: withOpacityValue('--muted-foreground')
         },
         accent: {
-          blue: '#3B82F6',
-          indigo: '#6366F1',
-          purple: '#8B5CF6'
+          DEFAULT: withOpacityValue('--accent'),
+          foreground: withOpacityValue('--accent-foreground')
         },
-        border: '#1E293B',
-        muted: {
-          DEFAULT: 'rgba(148, 163, 184, 0.35)',
-          foreground: 'rgba(226, 232, 240, 0.72)'
+        surface: {
+          DEFAULT: withOpacityValue('--surface'),
+          foreground: withOpacityValue('--surface-foreground')
+        },
+        destructive: {
+          DEFAULT: withOpacityValue('--destructive'),
+          foreground: withOpacityValue('--destructive-foreground')
+        },
+        success: {
+          DEFAULT: withOpacityValue('--success'),
+          foreground: withOpacityValue('--success-foreground')
         }
       },
       fontFamily: {

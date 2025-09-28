@@ -71,16 +71,20 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
   const [goal, setGoal] = useState(defaultValues?.goal ?? "");
   const [businessType, setBusinessType] = useState(defaultValues?.businessType ?? "");
   const [source, setSource] = useState(defaultValues?.source ?? "");
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<"idle" | "saving" | "skipping">("idle");
   const [error, setError] = useState<string | null>(null);
 
   const isValid = useMemo(() => {
     return Boolean(goal && businessType.trim() && source);
   }, [goal, businessType, source]);
 
+  const isSaving = status === "saving";
+  const isSkipping = status === "skipping";
+  const isBusy = status !== "idle";
+
   const handleSubmit = async () => {
     if (!isValid) return;
-    setLoading(true);
+    setStatus("saving");
     setError(null);
     try {
       await onSave({
@@ -92,25 +96,25 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menyimpan jawaban.");
     } finally {
-      setLoading(false);
+      setStatus("idle");
     }
   };
 
   const handleSkip = async () => {
-    setLoading(true);
+    setStatus("skipping");
     setError(null);
     try {
       await onSkip();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memperbarui status.");
     } finally {
-      setLoading(false);
+      setStatus("idle");
     }
   };
 
   return (
     <Dialog open={open}>
-      <DialogContent className="max-w-2xl space-y-6">
+      <DialogContent hideClose className="max-w-2xl space-y-6">
         <DialogHeader>
           <DialogTitle>Kenalan dulu yuk!</DialogTitle>
           <DialogDescription>
@@ -140,7 +144,7 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">Tujuan utama pakai UMKM Kits</p>
             <Select value={goal} onValueChange={setGoal}>
-              <SelectTrigger>
+              <SelectTrigger className="text-white placeholder:text-muted-foreground">
                 <SelectValue placeholder="Pilih tujuan" />
               </SelectTrigger>
               <SelectContent>
@@ -160,6 +164,7 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
                 value={businessType}
                 onChange={(event) => setBusinessType(event.target.value)}
                 placeholder="Contoh: Kuliner"
+                className="text-white placeholder:text-muted-foreground"
               />
               <datalist id="onboarding-business">
                 {BUSINESS_TYPES.map((item) => (
@@ -171,7 +176,7 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">Dari mana tahu UMKM Kits Studio?</p>
             <Select value={source} onValueChange={setSource}>
-              <SelectTrigger>
+              <SelectTrigger className="text-white placeholder:text-muted-foreground">
                 <SelectValue placeholder="Pilih sumber" />
               </SelectTrigger>
               <SelectContent>
@@ -191,12 +196,19 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
             variant="ghost"
             className="text-sm text-muted-foreground hover:text-foreground"
             onClick={handleSkip}
-            disabled={loading}
+            disabled={isBusy}
           >
-            Lewati dulu
+            {isSkipping ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                Memproses...
+              </span>
+            ) : (
+              "Lewati dulu"
+            )}
           </Button>
-          <Button type="button" onClick={handleSubmit} disabled={!isValid || loading}>
-            {loading ? (
+          <Button type="button" onClick={handleSubmit} disabled={!isValid || isBusy}>
+            {isSaving ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                 Menyimpan...
