@@ -27,7 +27,7 @@ export default function RootLayout({
       <body
         className={`min-h-dvh bg-background text-foreground antialiased font-sans ${fontSans.variable}`}
       >
-        {children}
+        <main className="pt-[var(--nav-h)]">{children}</main>
       </body>
     </html>
   );

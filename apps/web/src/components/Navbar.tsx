@@ -1,28 +1,37 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-import { Menu, Sparkles } from 'lucide-react';
-import { motion, useScroll } from 'framer-motion';
-import { Button } from './ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
-import { LangToggle } from '../../components/lang-toggle';
-import { cn } from '../../lib/utils';
+import Link from "next/link";
+import type { UrlObject } from "url";
+import { isValidLocale } from "../../lib/i18n";
+import type { Locale } from "../../lib/i18n";
+import { useParams, usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { Menu, Sparkles } from "lucide-react";
+import { motion, useScroll } from "framer-motion";
+import { Button } from "./ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
+import { LangToggle } from "../../components/lang-toggle";
+import { cn } from "../../lib/utils";
+import AuthNav from "./auth/AuthNav";
 
 const NAV_SECTIONS = [
-  { id: 'hero', label: 'Beranda' },
-  { id: 'features', label: 'Fitur' },
-  { id: 'gallery', label: 'Galeri' },
-  { id: 'pricing', label: 'Harga' }
+  { id: "hero", label: "Beranda" },
+  { id: "features", label: "Fitur" },
+  { id: "gallery", label: "Galeri" },
+  { id: "pricing", label: "Harga" }
 ];
 
-export function Navbar({ locale = 'id', showSections = true }: { locale?: string; showSections?: boolean }) {
+export function Navbar({ locale = "id" }: { locale?: Locale }) {
+  const params = (useParams<{ locale?: string }>() ?? {}) as { locale?: string };
   const pathname = usePathname();
-  const [active, setActive] = useState('hero');
+  const [active, setActive] = useState("hero");
   const [isSheetOpen, setSheetOpen] = useState(false);
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
+  const localeFromParams = params.locale && isValidLocale(params.locale) ? params.locale : undefined;
+  const resolvedLocale = localeFromParams ?? locale;
+  const base = localeFromParams ? `/${localeFromParams}` : "";
+  const showMarketing = pathname === "/" || pathname === `${base || "/"}`;
 
   useEffect(() => {
     const unsub = scrollY.on('change', (value) => setScrolled(value > 10));
@@ -30,7 +39,7 @@ export function Navbar({ locale = 'id', showSections = true }: { locale?: string
   }, [scrollY]);
 
   useEffect(() => {
-    if (!showSections) return;
+    if (!showMarketing) return;
     const sections = NAV_SECTIONS.map((item) => document.getElementById(item.id)).filter(Boolean) as HTMLElement[];
     if (!sections.length) return;
     const observer = new IntersectionObserver(
@@ -46,9 +55,14 @@ export function Navbar({ locale = 'id', showSections = true }: { locale?: string
     );
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
-  }, [showSections]);
+  }, [showMarketing]);
 
-  const navItems = useMemo(() => (showSections ? NAV_SECTIONS : []), [showSections]);
+  const navItems = useMemo(() => (showMarketing ? NAV_SECTIONS : []), [showMarketing]);
+  const navPathBase = base ? `${base}/` : "/";
+  const dashboardPath = base ? `${base}/dashboard` : "/dashboard";
+  const brandHref: UrlObject = pathname?.startsWith(dashboardPath)
+    ? { pathname }
+    : { pathname: navPathBase };
 
   return (
     <motion.header
@@ -58,11 +72,11 @@ export function Navbar({ locale = 'id', showSections = true }: { locale?: string
         backdropFilter: scrolled ? 'blur(14px)' : 'blur(10px)',
         borderColor: scrolled ? 'rgba(148, 163, 184, 0.25)' : 'rgba(148, 163, 184, 0.15)'
       }}
-      className="fixed inset-x-0 top-0 z-50 border-b border-white/10"
+      className="fixed inset-x-0 top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur lg:h-20"
     >
-      <div className="container flex h-16 items-center justify-between gap-4">
+      <div className="container flex h-full items-center justify-between gap-4">
         <Link
-          href={(pathname?.startsWith('/dashboard') ? pathname : `/${locale}`) as never}
+          href={brandHref}
           className="flex items-center gap-2 text-sm font-semibold tracking-tight"
         >
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-accent text-white shadow-lg shadow-blue-600/40">
@@ -70,26 +84,26 @@ export function Navbar({ locale = 'id', showSections = true }: { locale?: string
           </span>
           <span className="text-base text-white">UMKM Kits Studio</span>
         </Link>
-        {showSections ? (
+        {showMarketing ? (
           <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.id}
-                href={`#${item.id}`}
+                href={item.id === "hero" ? { pathname: navPathBase } : { pathname: navPathBase, hash: item.id }}
                 className={cn(
-                  'relative px-2 py-1 text-[var(--text-muted)] transition-colors hover:text-white',
-                  active === item.id && 'text-white'
+                  "relative px-2 py-1 text-[var(--text-muted)] transition-colors hover:text-white",
+                  active === item.id && "text-white"
                 )}
               >
                 {active === item.id && (
                   <motion.span
                     layoutId="navbar-active"
                     className="absolute inset-0 -z-10 rounded-full bg-white/10"
-                    transition={{ type: 'spring', stiffness: 260, damping: 25 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 25 }}
                   />
                 )}
                 {item.label}
-              </a>
+              </Link>
             ))}
           </nav>
         ) : (
@@ -97,15 +111,7 @@ export function Navbar({ locale = 'id', showSections = true }: { locale?: string
         )}
         <div className="hidden items-center gap-2 md:flex">
           <LangToggle />
-          <Button variant="secondary" asChild>
-            <Link href={`/${locale}/dashboard`}>Dashboard</Link>
-          </Button>
-          <Button variant="ghost" asChild>
-            <Link href={`/${locale}/sign-in`}>Masuk</Link>
-          </Button>
-          <Button asChild>
-            <Link href={`/${locale}/sign-up`}>Coba Gratis</Link>
-          </Button>
+          <AuthNav fallbackLocale={resolvedLocale} />
         </div>
         <div className="flex items-center gap-2 md:hidden">
           <LangToggle />
@@ -120,31 +126,28 @@ export function Navbar({ locale = 'id', showSections = true }: { locale?: string
                 <SheetTitle className="text-left text-white">Menu</SheetTitle>
               </SheetHeader>
               <div className="mt-6 flex flex-col gap-3">
-                {showSections
+                {showMarketing
                   ? navItems.map((item) => (
                       <Button
                         key={item.id}
-                        variant={active === item.id ? 'default' : 'secondary'}
+                        variant={active === item.id ? "default" : "secondary"}
                         className="justify-start"
                         onClick={() => setSheetOpen(false)}
                         asChild
                       >
-                        <Link href={`#${item.id}` as never}>{item.label}</Link>
+                        <Link href={item.id === "hero" ? { pathname: navPathBase } : { pathname: navPathBase, hash: item.id }}>
+                          {item.label}
+                        </Link>
                       </Button>
                     ))
                   : null}
               </div>
-              <div className="mt-8 flex flex-col gap-3">
-                <Button variant="secondary" asChild>
-                  <Link href={`/${locale}/dashboard`}>Dashboard</Link>
-                </Button>
-                <Button variant="ghost" asChild>
-                  <Link href={`/${locale}/sign-in`}>Masuk</Link>
-                </Button>
-                <Button asChild>
-                  <Link href={`/${locale}/sign-up`}>Coba Gratis</Link>
-                </Button>
-              </div>
+              <AuthNav
+                layout="column"
+                fallbackLocale={resolvedLocale}
+                onNavigate={() => setSheetOpen(false)}
+                className="mt-8"
+              />
             </SheetContent>
           </Sheet>
         </div>

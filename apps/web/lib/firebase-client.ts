@@ -44,6 +44,10 @@ function ensureApp(): FirebaseApp | null {
   return app;
 }
 
+export function getClientApp(): FirebaseApp | null {
+  return ensureApp();
+}
+
 export function getFirebaseAuth(): Auth | null {
   const firebaseApp = ensureApp();
   if (!firebaseApp) return null;
