@@ -1,15 +1,20 @@
 "use client";
 
+import type { UrlObject } from "url";
 
-import Link from 'next/link';
-import { useParams, usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-import { Menu, Sparkles } from 'lucide-react';
-import { motion, useScroll } from 'framer-motion';
-import { Button } from './ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
-import { LangToggle } from '../../components/lang-toggle';
-import { cn } from '../../lib/utils';
+import Link from "next/link";
+import { useParams, usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { Menu, Sparkles } from "lucide-react";
+import { motion, useScroll } from "framer-motion";
+import type { Route } from "next";
+import { Button } from "./ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
+import { LangToggle } from "../../components/lang-toggle";
+import type { Locale } from "../../lib/i18n";
+import { isValidLocale } from "../../lib/i18n";
+import { cn } from "../../lib/utils";
+import AuthNav from "./auth/AuthNav";
 
 const NAV_SECTIONS = [
   { id: 'home', label: 'Beranda' },
@@ -19,29 +24,29 @@ const NAV_SECTIONS = [
 
 ] as const;
 
-export function Navbar({ locale = "id" }: { locale?: Locale }) {
-  const basePath: `/${string}` | '/' = params?.locale ? `/${params.locale}` : '/'
+export function Navbar({ locale = "id", showSections }: { locale?: Locale; showSections?: boolean }) {
+  const params = useParams<{ locale?: string }>();
   const pathname = usePathname();
 
-  const params = useParams<{ locale?: string }>();
-  const base = params?.locale ? `/${params.locale}` : '';
-  const [active, setActive] = useState('home');
+  const localeFromParams = params?.locale && isValidLocale(params.locale) ? params.locale : undefined;
+  const resolvedLocale = localeFromParams ?? locale;
+  const basePath: `/${Locale}` | "/" = localeFromParams ? `/${localeFromParams}` : "/";
+  const base: `/${Locale}` | "" = localeFromParams ? `/${localeFromParams}` : "";
+  const shouldShowSections =
+    showSections ?? (pathname === "/" || pathname === `${base || "/"}`);
+  const [active, setActive] = useState("home");
 
   const [isSheetOpen, setSheetOpen] = useState(false);
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
-  const localeFromParams = params.locale && isValidLocale(params.locale) ? params.locale : undefined;
-  const resolvedLocale = localeFromParams ?? locale;
-  const base = localeFromParams ? `/${localeFromParams}` : "";
-  const showMarketing = pathname === "/" || pathname === `${base || "/"}`;
 
   useEffect(() => {
-    const unsub = scrollY.on('change', (value) => setScrolled(value > 10));
+    const unsub = scrollY.on("change", (value) => setScrolled(value > 10));
     return () => unsub();
   }, [scrollY]);
 
   useEffect(() => {
-    if (!showMarketing) return;
+    if (!shouldShowSections) return;
     const sections = NAV_SECTIONS.map((item) => document.getElementById(item.id)).filter(Boolean) as HTMLElement[];
     if (!sections.length) return;
     const observer = new IntersectionObserver(
@@ -57,14 +62,14 @@ export function Navbar({ locale = "id" }: { locale?: Locale }) {
     );
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
-  }, [showMarketing]);
+  }, [shouldShowSections]);
 
-  const navItems = useMemo(() => (showMarketing ? NAV_SECTIONS : []), [showMarketing]);
-  const navPathBase = base ? `${base}/` : "/";
-  const dashboardPath = base ? `${base}/dashboard` : "/dashboard";
+  const navItems = useMemo(() => (shouldShowSections ? NAV_SECTIONS : []), [shouldShowSections]);
+  const marketingPathname = basePath as Route;
+  const dashboardPath = (base ? `${base}/dashboard` : "/dashboard") as Route;
   const brandHref: UrlObject = pathname?.startsWith(dashboardPath)
     ? { pathname }
-    : { pathname: navPathBase };
+    : { pathname: marketingPathname };
 
   return (
     <motion.header
@@ -77,23 +82,18 @@ export function Navbar({ locale = "id" }: { locale?: Locale }) {
       className="fixed inset-x-0 top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur lg:h-20"
     >
       <div className="container flex h-full items-center justify-between gap-4">
-        <Link
-          href={{ pathname: basePath, hash: item.id }}
-          className="flex items-center gap-2 text-sm font-semibold tracking-tight"
-        >
+        <Link href={brandHref} className="flex items-center gap-2 text-sm font-semibold tracking-tight">
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-accent text-white shadow-lg shadow-blue-600/40">
             <Sparkles className="h-4 w-4" />
           </span>
           <span className="text-base text-white">UMKM Kits Studio</span>
         </Link>
-        {showMarketing ? (
+        {shouldShowSections ? (
           <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
             {navItems.map((item) => (
               <Link
                 key={item.id}
-
-                href={`${base}/#${item.id}`}
-
+                href={{ pathname: marketingPathname, hash: item.id }}
                 className={cn(
                   "relative px-2 py-1 text-[var(--text-muted)] transition-colors hover:text-white",
                   active === item.id && "text-white"
@@ -130,7 +130,7 @@ export function Navbar({ locale = "id" }: { locale?: Locale }) {
                 <SheetTitle className="text-left text-white">Menu</SheetTitle>
               </SheetHeader>
               <div className="mt-6 flex flex-col gap-3">
-                {showMarketing
+                {shouldShowSections
                   ? navItems.map((item) => (
                       <Button
                         key={item.id}
@@ -140,7 +140,7 @@ export function Navbar({ locale = "id" }: { locale?: Locale }) {
                         asChild
                       >
 
-                        <Link href={{ pathname: basePath, hash: item.id }}>{item.label}</Link>
+                        <Link href={{ pathname: marketingPathname, hash: item.id }}>{item.label}</Link>
 
                       </Button>
                     ))
