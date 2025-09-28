@@ -22,6 +22,9 @@ async function readEnvFlags(): Promise<string[]> {
   try {
     const res = await fetch('/api/env-check', { cache: 'no-store' });
     const json = await res.json();
+    if (Array.isArray(json?.missing)) {
+      return json.missing as string[];
+    }
     const missing: string[] = [];
     if (!json?.flags?.API_KEY) missing.push('NEXT_PUBLIC_FIREBASE_API_KEY');
     if (!json?.flags?.AUTH_DOMAIN) missing.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN');
