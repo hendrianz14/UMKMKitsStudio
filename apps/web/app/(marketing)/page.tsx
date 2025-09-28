@@ -3,11 +3,17 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ArrowRight } from 'lucide-react';
-import { BeforeAfterNoSSR, FeatureGridNoSSR, FooterNoSSR, NavbarNoSSR, PricingSectionNoSSR } from '../src/components/no-ssr';
-const HeroInteractiveImage = dynamic(() => import('../src/components/HeroInteractiveImage'), { ssr: false });
-import { SectionHeading } from '../src/components/SectionHeading';
-import { Button } from '../src/components/ui/button';
-import { defaultLocale } from '../lib/i18n';
+import { BeforeAfterNoSSR, FeatureGridNoSSR, FooterNoSSR, NavbarNoSSR, PricingSectionNoSSR } from '../../src/components/no-ssr';
+const HeroInteractiveImage = dynamic(
+  () => import('../../src/components/HeroInteractiveImage'),
+  {
+    ssr: false,
+    loading: () => <div className="aspect-[5/3] rounded-2xl bg-secondary/30 animate-pulse" />
+  }
+);
+import { SectionHeading } from '../../src/components/SectionHeading';
+import { Button } from '../../src/components/ui/button';
+import { defaultLocale } from '../../lib/i18n';
 
 export default function MarketingPage() {
   const locale = defaultLocale;

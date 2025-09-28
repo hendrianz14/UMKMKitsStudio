@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import type { ReactNode } from 'react';
 import { CardX } from '../../../components/ui/cardx';
 import { templates } from '../../../data/templates';
 
@@ -10,7 +11,12 @@ const demoAssets = templates.map((template, index) => ({
   title: template.name
 }));
 
-export default function GalleryPage() {
+export default async function GalleryPage({
+  params
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<ReactNode> {
+  await params;
   return (
     <div className="space-y-8">
       <CardX tone="surface" padding="lg" className="space-y-2">

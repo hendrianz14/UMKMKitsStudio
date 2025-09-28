@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
 import { notFound } from 'next/navigation';
-import { ReactNode } from 'react';
 import { unstable_setRequestLocale } from 'next-intl/server';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { cn } from '../../lib/utils';
@@ -22,7 +22,7 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export default async function LocaleLayout({
+export default async function RootLayout({
   children,
   params
 }: {
