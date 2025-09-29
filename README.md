@@ -58,7 +58,7 @@ Monorepo untuk platform kreatif UMKM Kits Studio. Struktur ini terdiri atas apli
 
 ## Deploy
 
-1. Deploy UI ke Vercel dan set `NEXT_PUBLIC_API_BASE` mengarah ke layanan backend Anda.
+1. Deploy UI ke Vercel dan set variabel Supabase (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
 2. Kelola storage, auth, dan edge functions melalui Supabase Project yang terhubung.
 3. Pastikan domain Vercel, staging, dan produksi masuk ke variabel `CORS_ALLOWED_ORIGINS`.
 4. Verifikasi endpoint `GET /api-health` berjalan dan menampilkan status lingkungan.
