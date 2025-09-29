@@ -150,14 +150,18 @@ export async function POST(req: NextRequest) {
     });
 
     if (error) {
-      if (error.status === 422) {
+      // normalize status supaya tidak "possibly undefined"
+      const status = typeof (error as any)?.status === "number" ? (error as any).status as number : undefined;
+
+      if (status === 422) {
         try { existing = await findUserByEmail(admin, email); } catch {}
       } else {
-        console.error("[complete-signup] createUser error:", error.message || error);
-        const msg = error.status >= 400 && error.status < 500
-          ? error.message || "Tidak dapat membuat akun dengan data tersebut."
+        console.error("[complete-signup] createUser error:", (error as any)?.message || error);
+        const resolvedStatus = status ?? 500;
+        const msg = resolvedStatus >= 400 && resolvedStatus < 500
+          ? ((error as any)?.message || "Tidak dapat membuat akun dengan data tersebut.")
           : "Gagal memproses permintaan. Coba lagi nanti.";
-        return NextResponse.json({ error: msg }, { status: error.status || 500 });
+        return NextResponse.json({ error: msg }, { status: resolvedStatus });
       }
     }
 
@@ -176,7 +180,7 @@ export async function POST(req: NextRequest) {
         user_metadata: { ...(existing.user_metadata || {}), full_name: fullName },
       });
       if (updErr) {
-        console.error("[complete-signup] updateUserById error:", updErr.message || updErr);
+        console.error("[complete-signup] updateUserById error:", (updErr as any)?.message || updErr);
         return NextResponse.json({ error: "UPDATE_USER_ERROR" }, { status: 500 });
       }
       return await finalize(existing.id);
