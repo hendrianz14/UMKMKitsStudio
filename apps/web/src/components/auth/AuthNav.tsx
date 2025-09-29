@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, usePathname } from "next/navigation";
-import { getClientApp } from "@/lib/firebase-client";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import { isValidLocale } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
+import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 
 const DASHBOARD_ROUTES = {
   id: "/id/dashboard",
@@ -47,7 +46,7 @@ export default function AuthNav({
   fallbackLocale
 }: AuthNavProps) {
   const [authState, setAuthState] = useState<AuthState>("guest");
-  const app = getClientApp();
+  const supabase = getSupabaseBrowserClient();
   const { locale } = (useParams<{ locale?: string }>() ?? {}) as { locale?: string };
   const pathname = usePathname();
   const activeLocale = locale && isValidLocale(locale) ? (locale as Locale) : fallbackLocale;
@@ -56,16 +55,33 @@ export default function AuthNav({
   const signUpHref = activeLocale ? SIGN_UP_ROUTES[activeLocale] : "/sign-up";
 
   useEffect(() => {
-    if (!app) {
+    if (!supabase) {
       setAuthState("guest");
       return;
     }
 
-    const auth = getAuth(app);
-    return onAuthStateChanged(auth, (user) => {
-      setAuthState(user ? "authenticated" : "guest");
+    let cancelled = false;
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setAuthState(data.session ? "authenticated" : "guest");
+      })
+      .catch((error) => {
+        console.warn("[auth-nav] Failed to get session", error);
+        if (!cancelled) setAuthState("guest");
+      });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
+      setAuthState(session ? "authenticated" : "guest");
     });
-  }, [app]);
+
+    return () => {
+      cancelled = true;
+      listener.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const isLoggedIn = authState === "authenticated";
   const containerClasses =
@@ -90,8 +106,8 @@ export default function AuthNav({
 
   const handleSignOut = () => {
     handleNavigate();
-    if (app) {
-      void signOut(getAuth(app));
+    if (supabase) {
+      void supabase.auth.signOut();
     }
   };
 
