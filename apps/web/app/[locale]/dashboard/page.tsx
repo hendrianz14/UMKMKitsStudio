@@ -79,15 +79,8 @@ export default function DashboardPage() {
   }, [supabase, user]);
 
   useEffect(() => {
-    const base = process.env.NEXT_PUBLIC_API_BASE;
-    if (!base) {
-      setError('NEXT_PUBLIC_API_BASE belum disetel.');
-      return;
-    }
     setLoading(true);
-    fetch(`${base}/api/ai/jobs?limit=5`, {
-      credentials: 'include'
-    })
+    fetch('/api/ai/jobs?limit=5', { credentials: 'include' })
       .then(async (response) => {
         if (!response.ok) throw new Error('Gagal memuat job.');
         return response.json();

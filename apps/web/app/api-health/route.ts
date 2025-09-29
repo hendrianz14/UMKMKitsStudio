@@ -5,7 +5,8 @@ export function GET() {
     status: 'ok',
     time: new Date().toISOString(),
     env: {
-      hasApiBase: Boolean(process.env.NEXT_PUBLIC_API_BASE),
+      hasSupabaseUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+      hasSupabaseAnonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
       nodeEnv: process.env.NODE_ENV
     }
   });

@@ -6,23 +6,13 @@ import { useTranslations } from "next-intl";
 import type { Route } from "next";
 import { useCallback, useMemo, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { EmailField, PasswordField } from "@/components/auth/AuthFormParts";
 import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-function createBrowserSupabase(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    return null;
-  }
-
-  return createClient(url, anonKey);
-}
+import { supaBrowser } from "@/lib/supabase-browser";
 
 const GoogleIcon = () => (
   <svg
@@ -60,7 +50,7 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = useMemo(() => createBrowserSupabase(), []);
+  const supabase = useMemo<SupabaseClient | null>(() => supaBrowser(), []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -9,6 +9,7 @@ create table if not exists public.email_otps (
   attempt_count integer not null default 0,
   expires_at timestamptz not null,
   last_sent_at timestamptz not null,
+  created_ip text,
   created_at timestamptz not null default timezone('utc', now())
 );
 

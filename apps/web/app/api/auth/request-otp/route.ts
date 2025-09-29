@@ -81,6 +81,9 @@ export async function POST(request: Request) {
   const codeHash = await bcrypt.hash(code, 10);
   const issuedAt = new Date(now);
   const expiresAt = new Date(now + OTP_EXPIRY_MS);
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const createdIp =
+    forwardedFor?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip") ?? null;
 
   const { data: insertedRows, error: insertError } = await supabase
     .from("email_otps")
@@ -92,6 +95,7 @@ export async function POST(request: Request) {
       attempt_count: 0,
       last_sent_at: issuedAt.toISOString(),
       created_at: issuedAt.toISOString(),
+      created_ip: createdIp,
     })
     .select("id");
 

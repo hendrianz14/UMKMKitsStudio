@@ -3,13 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5001";
-
-function buildUrl(path: string) {
-  const base = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
-  return `${base}${path}`;
-}
-
 type SubmitState = "idle" | "loading" | "success" | "error";
 
 export default function LoginEmailPage() {
@@ -37,11 +30,10 @@ export default function LoginEmailPage() {
       setStatus("loading");
       setMessage("Mengirim kode...");
       try {
-        const response = await fetch(buildUrl("/auth/request-otp"), {
+        const response = await fetch("/api/auth/request-otp", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email: sanitizedEmail }),
-          credentials: "include"
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) {
