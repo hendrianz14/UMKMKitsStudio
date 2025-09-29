@@ -59,6 +59,7 @@ export default function AuthActionPage() {
 
   const rawMode = searchParams.get("mode");
   const supabaseType = getParam("type");
+  const continueUrl = getParam("continueUrl");
   const mode = rawMode
     ? rawMode
     : supabaseType === "recovery"
