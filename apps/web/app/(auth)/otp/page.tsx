@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5001";
@@ -12,7 +12,7 @@ function buildUrl(path: string) {
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
-export default function OtpPage() {
+function OtpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
@@ -164,5 +164,21 @@ export default function OtpPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function OtpPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[calc(100dvh-64px)] items-center justify-center px-4">
+          <div className="w-full max-w-md rounded-2xl bg-surface/80 p-8 text-center text-white/80">
+            Memuat formulir OTP...
+          </div>
+        </div>
+      }
+    >
+      <OtpContent />
+    </Suspense>
   );
 }
