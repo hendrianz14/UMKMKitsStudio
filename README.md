@@ -28,23 +28,27 @@ Monorepo untuk platform kreatif UMKM Kits Studio. Struktur ini terdiri atas apli
    pnpm install
    ```
 
-2. **Salin berkas environment**
+2. **Salin dan isi berkas environment**
 
    ```bash
-   cp .env.example .env.local
+   cp apps/web/.env.example apps/web/.env.local
    ```
 
-   Sesuaikan nilai variabel sesuai kredensial Supabase, Midtrans, dan n8n Anda sebelum menjalankan produksi. Nilai contoh aman untuk build lokal.
+   Buka `apps/web/.env.local` kemudian isi seluruh variabel dengan kredensial Supabase, SMTP, dan URL aplikasi Anda sebelum menjalankan secara lokal maupun produksi.
 
-3. **Jalankan UI Next.js**
+3. **Buat tabel OTP di Supabase**
+
+   Jalankan isi dari `apps/web/supabase.sql` di Supabase SQL Editor agar tabel `email_otps` tersedia.
+
+4. **Jalankan UI Next.js**
 
    ```bash
-   pnpm -C apps/web dev
+   pnpm -C apps/web install && pnpm -C apps/web dev
    ```
 
    Aplikasi akan tersedia di `http://localhost:3000`. Landing page mendukung bahasa `id` (default) dan `en`.
 
-4. **Testing**
+5. **Testing**
 
    ```bash
    pnpm test
