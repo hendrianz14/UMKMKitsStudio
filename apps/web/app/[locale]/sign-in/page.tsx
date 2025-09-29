@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import type { Route } from "next";
 import { useCallback, useMemo, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -61,10 +62,6 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const supabase = useMemo(() => createBrowserSupabase(), []);
 
-  const dashboardPath = useMemo(() => {
-    return locale ? `/${locale}/dashboard` : "/dashboard";
-  }, [locale]);
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
@@ -90,7 +87,11 @@ export default function SignInPage() {
         setError(signInError.message || "Kredensial tidak valid.");
         return;
       }
-      router.replace(dashboardPath);
+      if (locale) {
+        router.replace(`/${locale}/dashboard` as Route);
+      } else {
+        router.replace("/dashboard");
+      }
     } catch (err) {
       if (typeof window !== "undefined") {
         console.error("[sign-in] Login error", err);
