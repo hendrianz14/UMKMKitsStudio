@@ -23,6 +23,10 @@ function getEmailDomain(email: string): string | null {
   const domain = parts[parts.length - 1];
   return domain ? domain.toLowerCase() : null;
 }
+function requireEnv(keys: string[]) {
+  const miss = keys.filter(k => !process.env[k] || String(process.env[k]).trim() === "");
+  return miss;
+}
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -30,6 +34,23 @@ export async function POST(request: Request) {
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Format email salah." }, { status: 400 });
+  }
+  // --- ENV sanity check (sementara untuk debug) ---
+  const missing = requireEnv([
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SMTP_HOST",
+    "SMTP_PORT",
+    "SMTP_USER",
+    "SMTP_PASS",
+    "EMAIL_FROM",
+  ]);
+  if (missing.length) {
+    console.error("[request-otp] Missing ENV:", missing);
+    return NextResponse.json(
+      { error: `Server belum dikonfigurasi (${missing.join(", ")})` },
+      { status: 500 }
+    );
   }
 
   const email = parsed.data.email.trim().toLowerCase();
