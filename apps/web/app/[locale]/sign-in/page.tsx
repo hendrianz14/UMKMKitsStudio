@@ -3,130 +3,156 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-import { AuthProviderButtons } from "@/components/auth/AuthProviderButtons";
 import { EmailField, PasswordField } from "@/components/auth/AuthFormParts";
 import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { clientEnvFlags } from "@/lib/env-flags-client";
-import { getFirebaseAuth } from "@/lib/firebase-client";
-import { ensureUserDoc } from "@/lib/user-profile";
-import {
-  collectMissingFirebaseEnvKeys,
-  fetchMissingFirebaseEnvKeys,
-  type FirebaseEnvKey,
-} from "@/lib/firebase-env-check";
+
+function createBrowserSupabase(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    return null;
+  }
+
+  return createClient(url, anonKey);
+}
+
+const GoogleIcon = () => (
+  <svg
+    aria-hidden="true"
+    focusable="false"
+    className="h-5 w-5"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      fill="#4285F4"
+      d="M23.49 12.27c0-.82-.07-1.64-.23-2.43H12v4.6h6.46a5.5 5.5 0 0 1-2.38 3.62v3h3.84c2.24-2.07 3.54-5.12 3.54-8.79z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 24c3.2 0 5.88-1.06 7.84-2.89l-3.84-3c-1.07.74-2.45 1.18-4 1.18-3.08 0-5.69-2.08-6.62-4.88H1.4v3.08A12 12 0 0 0 12 24z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.38 14.41a7.18 7.18 0 0 1 0-4.82V6.51H1.4a12 12 0 0 0 0 10.98l3.98-3.08z"
+    />
+    <path
+      fill="#EA4335"
+      d="M12 4.73c1.74 0 3.3.6 4.54 1.78l3.4-3.4C17.88 1.09 15.2 0 12 0 7.32 0 2.98 2.7 1.4 6.51l3.98 3.08C6.31 6.81 8.92 4.73 12 4.73z"
+    />
+  </svg>
+);
 
 export default function SignInPage() {
   const { locale } = useParams<{ locale: string }>();
   const router = useRouter();
   const t = useTranslations("auth");
-  const auth = getFirebaseAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [missing, setMissing] = useState<FirebaseEnvKey[]>(collectMissingFirebaseEnvKeys());
+  const supabase = useMemo(() => createBrowserSupabase(), []);
 
-  useEffect(() => {
-    if (!auth) {
-      fetchMissingFirebaseEnvKeys().then((serverMissing) => {
-        if (!serverMissing.length) return;
-        setMissing((prev) => {
-          const merged = new Set([...prev, ...serverMissing]);
-          return Array.from(merged);
-        });
-      });
-    }
-  }, [auth]);
-
-  const mapError = useCallback(
-    (code: string | undefined) => {
-      if (!code) return "Kredensial tidak valid.";
-      if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
-        return "Password salah.";
-      }
-      if (code === "auth/too-many-requests") {
-        return "Terlalu banyak percobaan. Coba beberapa saat lagi.";
-      }
-      return "Kredensial tidak valid.";
-    },
-    []
-  );
-
-  const handleEnsureUser = useCallback(async () => {
-    const currentUser = getFirebaseAuth()?.currentUser;
-    if (currentUser) {
-      await ensureUserDoc(currentUser);
-      if (locale) {
-        router.replace(`/${locale}/dashboard`);
-      }
-    }
-  }, [locale, router]);
+  const dashboardPath = useMemo(() => {
+    return locale ? `/${locale}/dashboard` : "/dashboard";
+  }, [locale]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    const currentAuth = getFirebaseAuth();
-    if (!currentAuth) {
-      const missingKeys = collectMissingFirebaseEnvKeys(clientEnvFlags());
-      setMissing((prev) => {
-        const merged = new Set([...prev, ...missingKeys]);
-        return Array.from(merged);
-      });
-      setError(
-        missingKeys.length
-          ? `Konfigurasi Firebase belum lengkap di client: ${missingKeys.join(", ")}`
-          : "Konfigurasi Firebase belum lengkap."
-      );
+
+    if (!supabase) {
+      setError("Konfigurasi Supabase belum lengkap.");
       return;
     }
-    setLoading(true);
+
     const emailNormalized = email.trim().toLowerCase();
+    if (!emailNormalized || !password) {
+      setError("Kredensial tidak valid.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const { fetchSignInMethodsForEmail, signInWithEmailAndPassword } = await import("firebase/auth");
-      const methods = await fetchSignInMethodsForEmail(currentAuth, emailNormalized);
-      if (!methods.length) {
-        setError("Email belum terdaftar.");
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: emailNormalized,
+        password,
+      });
+      if (signInError) {
+        setError(signInError.message || "Kredensial tidak valid.");
         return;
       }
-      if (!methods.includes("password")) {
-        setError("Kredensial tidak valid.");
-        return;
-      }
-      const credential = await signInWithEmailAndPassword(currentAuth, emailNormalized, password);
-      await ensureUserDoc(credential.user);
-      if (locale) {
-        router.replace(`/${locale}/dashboard`);
-      }
-    } catch (err: unknown) {
+      router.replace(dashboardPath);
+    } catch (err) {
       if (typeof window !== "undefined") {
         console.error("[sign-in] Login error", err);
       }
-      const firebaseError = err as { code?: string; message?: string };
-      setError(mapError(firebaseError.code));
+      setError("Kredensial tidak valid.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!auth) {
+  const handleGoogleSignIn = useCallback(async () => {
+    setError(null);
+    if (!supabase) {
+      setError("Konfigurasi Supabase belum lengkap.");
+      return;
+    }
+    if (googleLoading) return;
+
+    setGoogleLoading(true);
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : undefined;
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options:
+          origin
+            ? {
+                redirectTo: `${origin}/auth/callback`,
+              }
+            : undefined,
+      });
+      if (oauthError) {
+        setError(oauthError.message || "Gagal masuk dengan Google.");
+        setGoogleLoading(false);
+      }
+    } catch (err) {
+      if (typeof window !== "undefined") {
+        console.error("[sign-in] Google login error", err);
+      }
+      setError("Gagal masuk dengan Google. Coba lagi nanti.");
+      setGoogleLoading(false);
+    }
+  }, [googleLoading, supabase]);
+
+  if (!supabase) {
     return (
       <div className="container mx-auto max-w-lg py-16">
         <CardX tone="surface" padding="lg">
           <CardXHeader
-            title="Konfigurasi Firebase belum lengkap"
-            subtitle="Lengkapi environment variable Firebase di Vercel atau .env.local, kemudian jalankan ulang aplikasi."
+            title="Konfigurasi Supabase belum lengkap"
+            subtitle="Lengkapi environment variable Supabase di Vercel atau .env.local, kemudian jalankan ulang aplikasi."
           />
           <ul className="space-y-1 text-sm">
-            {missing.map((key) => (
-              <li key={key} className="flex items-center gap-2">
-                <span className="rounded bg-muted px-2 py-0.5 font-mono text-xs">{key}</span>
-              </li>
-            ))}
+            <li className="flex items-center gap-2">
+              <span className="rounded bg-muted px-2 py-0.5 font-mono text-xs">
+                NEXT_PUBLIC_SUPABASE_URL
+              </span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="rounded bg-muted px-2 py-0.5 font-mono text-xs">
+                NEXT_PUBLIC_SUPABASE_ANON_KEY
+              </span>
+            </li>
           </ul>
           <p className="mt-4 text-xs text-muted-foreground">
             Cek cepat: <a className="underline" href="/api/env-check" target="_blank" rel="noreferrer">/api/env-check</a>
@@ -143,12 +169,23 @@ export default function SignInPage() {
           title={t("signIn")}
           subtitle="Masuk untuk mengakses dashboard dan galeri aset Anda."
         />
-        <AuthProviderButtons
-          onSuccess={handleEnsureUser}
-          onError={(err) => {
-            setError(mapError((err as { code?: string }).code));
-          }}
-        />
+        <div className="grid gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="w-full justify-center gap-3 border border-border bg-background/60 text-foreground hover:bg-background"
+            disabled={googleLoading || loading}
+            onClick={() => void handleGoogleSignIn()}
+          >
+            {googleLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+            ) : (
+              <GoogleIcon />
+            )}
+            <span className="ml-2 text-sm font-semibold">Masuk dengan Google</span>
+          </Button>
+        </div>
         <div className="relative flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex-1 border-t border-border/70" />
           <span>atau masuk dengan email</span>
