@@ -34,7 +34,7 @@ export default function EditorPage() {
                 <Sparkles className="h-4 w-4 text-primary" /> Enhance / Caption AI siap pakai
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1">
-                <Wand2 className="h-4 w-4 text-primary" /> Export → Firebase Storage otomatis
+                <Wand2 className="h-4 w-4 text-primary" /> Export → Supabase Storage otomatis
               </span>
             </div>
           </div>

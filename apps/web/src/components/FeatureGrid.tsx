@@ -59,7 +59,7 @@ export function FeatureGrid() {
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              Workflow terintegrasi dengan n8n, Firebase, dan analitik real-time memastikan tim Anda tetap sinkron.
+              Workflow terintegrasi dengan n8n, Supabase, dan analitik real-time memastikan tim Anda tetap sinkron.
             </p>
           </CardX>
         </motion.div>

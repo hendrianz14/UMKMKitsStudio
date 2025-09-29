@@ -117,7 +117,7 @@ export default function MarketingPage() {
                 <ul className="mt-3 space-y-2">
                   <li>• Grid adaptif & snapping presisi 8px.</li>
                   <li>• Layer panel dengan visibilitas & drag reorder.</li>
-                  <li>• Export langsung ke Firebase Storage & galeri tim.</li>
+                  <li>• Export langsung ke Supabase Storage & galeri tim.</li>
                   <li>• Aksi AI: Enhance, Image-to-Image, Caption generator.</li>
                 </ul>
               </div>

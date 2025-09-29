@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { MailCheck, RefreshCw, Send, ShieldCheck } from "lucide-react";
-import { onAuthStateChanged, type User } from "firebase/auth";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CardX, CardXHeader } from "@/components/ui/cardx";
-import { getFirebaseAuth } from "@/lib/firebase-client";
+import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 import { normalizeEmail } from "@/lib/email";
 
 const RESEND_WINDOW_MS = 10 * 60 * 1000;
@@ -31,7 +31,7 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { locale } = useParams<{ locale: string }>();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
@@ -39,15 +39,33 @@ export default function VerifyEmailPage() {
   const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
 
+  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
+
   useEffect(() => {
-    const auth = getFirebaseAuth();
-    if (!auth) return;
-    setUser(auth.currentUser);
-    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
-      setUser(nextUser);
+    if (!supabase) return;
+    let unsubscribed = false;
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!unsubscribed) {
+          setUser(data.session?.user ?? null);
+        }
+      })
+      .catch((error) => {
+        console.warn("[verify-email] Failed to get session", error);
+        if (!unsubscribed) setUser(null);
+      });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
     });
-    return () => unsubscribe();
-  }, []);
+
+    return () => {
+      unsubscribed = true;
+      listener.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   useEffect(() => {
     if (!cooldownEndsAt) return;
@@ -86,23 +104,10 @@ export default function VerifyEmailPage() {
     setErrorMessage(null);
     setInfoMessage(null);
 
-    const auth = getFirebaseAuth();
     const normalizedEmail = displayEmail ? normalizeEmail(displayEmail) : "";
 
     try {
-      if (auth?.currentUser) {
-        const { sendEmailVerification } = await import("firebase/auth");
-        await sendEmailVerification(
-          auth.currentUser,
-          actionUrlBase
-            ? {
-                url: `${actionUrlBase}/auth/action`,
-              }
-            : undefined
-        );
-        setInfoMessage("Email verifikasi telah dikirim ulang.");
-        setCooldownEndsAt(Date.now() + RESEND_WINDOW_MS);
-      } else if (normalizedEmail) {
+      if (normalizedEmail) {
         const response = await fetch("/api/auth/resend-verification", {
           method: "POST",
           headers: {
@@ -137,17 +142,8 @@ export default function VerifyEmailPage() {
   };
 
   const handleCheckVerification = async () => {
-    const auth = getFirebaseAuth();
-    if (!auth) {
-      setErrorMessage("Firebase belum siap. Coba lagi beberapa saat.");
-      return;
-    }
-
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      if (locale) {
-        router.replace(`/${locale}/sign-in`);
-      }
+    if (!supabase) {
+      setErrorMessage("Supabase belum siap. Coba lagi beberapa saat.");
       return;
     }
 
@@ -156,8 +152,17 @@ export default function VerifyEmailPage() {
     setInfoMessage(null);
 
     try {
-      await currentUser.reload();
-      if (currentUser.emailVerified) {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      const currentUser = data.user;
+      if (!currentUser) {
+        if (locale) {
+          router.replace(`/${locale}/sign-in`);
+        }
+        return;
+      }
+
+      if (currentUser.email_confirmed_at) {
         if (locale) {
           router.replace(`/${locale}/dashboard`);
         }
@@ -250,7 +255,7 @@ export default function VerifyEmailPage() {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Tidak menemukan emailnya? Cek folder spam/promosi atau tambahkan noreply@firebaseapp.com ke daftar kontak.
+          Tidak menemukan emailnya? Cek folder spam/promosi atau tambahkan no-reply@supabase.com ke daftar kontak.
         </p>
       </CardX>
     </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, LockKeyhole } from "lucide-react";
 
 import {
@@ -12,13 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getFirebaseAuth, getFirebaseFirestore } from "@/lib/firebase-client";
+import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 import { cn } from "@/lib/utils";
 import {
-  collectMissingFirebaseEnvKeys,
-  fetchMissingFirebaseEnvKeys,
-  type FirebaseEnvKey,
-} from "@/lib/firebase-env-check";
+  collectMissingSupabaseEnvKeys,
+  fetchMissingSupabaseEnvKeys,
+  type SupabaseEnvKey,
+} from "@/lib/supabase-env-check";
 
 interface ResetState {
   email: string | null;
@@ -30,76 +30,97 @@ export default function AuthActionPage() {
   const searchParams = useSearchParams();
   const { locale } = useParams<{ locale: string }>();
   const router = useRouter();
-  const mode = searchParams.get("mode");
-  const oobCode = searchParams.get("oobCode");
-  const continueUrl = searchParams.get("continueUrl") ?? process.env.APP_URL ?? undefined;
-
-  const auth = getFirebaseAuth();
-  const [missing, setMissing] = useState<FirebaseEnvKey[]>(collectMissingFirebaseEnvKeys());
+  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
+  const [hashParams, setHashParams] = useState<URLSearchParams | null>(null);
+  const [missing, setMissing] = useState<SupabaseEnvKey[]>(collectMissingSupabaseEnvKeys());
   const [verifyStatus, setVerifyStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
   const [actionError, setActionError] = useState<string | null>(null);
   const [reset, setReset] = useState<ResetState>({ email: null, status: "idle" });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const envReady = missing.length === 0;
 
   useEffect(() => {
-    if (!auth) {
-      fetchMissingFirebaseEnvKeys().then((serverMissing) => {
-        if (!serverMissing.length) return;
-        setMissing((prev) => Array.from(new Set([...prev, ...serverMissing])));
-      });
+    if (typeof window === "undefined") return;
+    setHashParams(new URLSearchParams(window.location.hash.replace(/^#/, "")));
+  }, [searchParams]);
+
+  const getParam = useCallback(
+    (key: string) => {
+      const fromSearch = searchParams.get(key);
+      if (fromSearch !== null) {
+        return fromSearch;
+      }
+      return hashParams?.get(key) ?? undefined;
+    },
+    [hashParams, searchParams]
+  );
+
+  const rawMode = searchParams.get("mode");
+  const supabaseType = getParam("type");
+  const mode = rawMode
+    ? rawMode
+    : supabaseType === "recovery"
+      ? "resetPassword"
+      : supabaseType === "signup"
+        ? "verifyEmail"
+        : null;
+
+  useEffect(() => {
+    if (envReady) return;
+    fetchMissingSupabaseEnvKeys().then((serverMissing) => {
+      if (!serverMissing.length) return;
+      setMissing((prev) => Array.from(new Set([...prev, ...serverMissing])));
+    });
+  }, [envReady]);
+
+  const applySessionFromUrl = useCallback(async () => {
+    if (!supabase) {
+      throw new Error("Supabase belum siap");
     }
-  }, [auth]);
+    const accessToken = getParam("access_token");
+    const refreshToken = getParam("refresh_token");
+    const code = getParam("code");
+    if (accessToken && refreshToken) {
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (error) throw error;
+      return data.session ?? null;
+    }
+    if (code) {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) throw error;
+      return data.session ?? null;
+    }
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    return data.session ?? null;
+  }, [getParam, supabase]);
 
   useEffect(() => {
-    if (!auth || !mode || !oobCode) return;
+    if (!supabase || !mode) return;
 
     if (mode === "verifyEmail") {
       setVerifyStatus("processing");
+      setActionError(null);
       void (async () => {
         try {
-          const { applyActionCode } = await import("firebase/auth");
-          await applyActionCode(auth, oobCode);
-          try {
-            await auth.currentUser?.reload();
-          } catch (reloadError) {
-            if (process.env.NODE_ENV !== "production") {
-              console.warn("[auth-action] Failed to reload user after verification", reloadError);
-            }
-          }
-          const firestore = getFirebaseFirestore();
-          const currentUser = auth.currentUser;
-          if (firestore && currentUser) {
-            try {
-              const { doc, getDoc, serverTimestamp, setDoc } = await import("firebase/firestore");
-              const ref = doc(firestore, "users", currentUser.uid);
-              const snapshot = await getDoc(ref);
-              const data = snapshot.exists() ? (snapshot.data() as { credits?: number; verifiedAt?: unknown }) : null;
-              const existingCredits = typeof data?.credits === "number" ? data.credits : null;
-              const hasVerifiedAt = data?.verifiedAt != null;
-              const updates: Record<string, unknown> = { verificationPending: false };
-              if (!snapshot.exists() || existingCredits === null || existingCredits === 0 || !hasVerifiedAt) {
-                updates.credits = 50;
-                updates.verifiedAt = serverTimestamp();
-              }
-              await setDoc(ref, updates, { merge: true });
-            } catch (firestoreError) {
-              if (process.env.NODE_ENV !== "production") {
-                console.error("[auth-action] Failed to update user verification state", firestoreError);
-              }
-            }
-          }
-          setVerifyStatus("success");
-          setActionError(null);
-        } catch (error) {
-          const firebaseError = error as { code?: string };
-          setVerifyStatus("error");
-          if (firebaseError.code === "auth/invalid-action-code") {
-            setActionError("Kode verifikasi tidak valid atau sudah digunakan.");
+          await applySessionFromUrl();
+          const { data, error } = await supabase.auth.getUser();
+          if (error) throw error;
+          if (data.user?.email_confirmed_at) {
+            setVerifyStatus("success");
           } else {
-            setActionError("Gagal memverifikasi email. Coba lagi nanti.");
+            setVerifyStatus("error");
+            setActionError("Email belum terverifikasi. Coba masuk ulang dan cek tautan terbaru.");
           }
+        } catch (error) {
+          console.error("[auth-action] Failed to verify email", error);
+          setVerifyStatus("error");
+          setActionError("Gagal memverifikasi email. Coba lagi nanti.");
         }
       })();
     }
@@ -108,54 +129,68 @@ export default function AuthActionPage() {
       setReset({ email: null, status: "checking" });
       void (async () => {
         try {
-          const { verifyPasswordResetCode } = await import("firebase/auth");
-          const emailFromCode = await verifyPasswordResetCode(auth, oobCode);
-          setReset({ email: emailFromCode, status: "valid" });
-        } catch (error) {
-          const firebaseError = error as { code?: string };
-          if (firebaseError.code === "auth/expired-action-code") {
-            setReset({ email: null, status: "invalid", errorMessage: "Kode reset telah kedaluwarsa." });
-          } else {
-            setReset({ email: null, status: "invalid", errorMessage: "Kode reset tidak valid." });
+          const session = await applySessionFromUrl();
+          const emailFromSession = session?.user?.email;
+          if (emailFromSession) {
+            setReset({ email: emailFromSession, status: "valid" });
+            return;
           }
+          const { data, error } = await supabase.auth.getUser();
+          if (error) throw error;
+          if (data.user?.email) {
+            setReset({ email: data.user.email, status: "valid" });
+            return;
+          }
+          throw new Error("Email tidak ditemukan");
+        } catch (error) {
+          console.error("[auth-action] Invalid recovery link", error);
+          setReset({
+            email: null,
+            status: "invalid",
+            errorMessage: "Tautan reset tidak valid atau sudah kedaluwarsa.",
+          });
         }
       })();
     }
-  }, [auth, mode, oobCode]);
+  }, [applySessionFromUrl, mode, supabase]);
 
   const passwordValid = useMemo(() => isPasswordValid(password), [password]);
   const passwordsMatch = password === confirmPassword;
 
   const handleResetSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!auth || !oobCode || reset.status !== "valid" || !passwordValid || !passwordsMatch) {
+    if (!supabase || reset.status !== "valid" || !passwordValid || !passwordsMatch) {
       return;
     }
     setSubmitting(true);
     try {
-      const { confirmPasswordReset } = await import("firebase/auth");
-      await confirmPasswordReset(auth, oobCode, password);
+      await applySessionFromUrl();
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        if (error.message && /weak|short/i.test(error.message)) {
+          setActionError("Password terlalu lemah.");
+        } else {
+          throw error;
+        }
+        return;
+      }
       setReset((prev) => ({ ...prev, status: "completed" }));
       setActionError(null);
     } catch (error) {
-      const firebaseError = error as { code?: string };
-      if (firebaseError.code === "auth/weak-password") {
-        setActionError("Password terlalu lemah.");
-      } else {
-        setActionError("Gagal menyimpan password baru. Coba lagi.");
-      }
+      console.error("[auth-action] Failed to update password", error);
+      setActionError("Gagal menyimpan password baru. Coba lagi.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!auth) {
+  if (!envReady || !supabase) {
     return (
       <div className="container mx-auto max-w-xl py-16">
         <CardX tone="surface" padding="lg">
           <CardXHeader
-            title="Konfigurasi Firebase belum lengkap"
-            subtitle="Lengkapi environment variable Firebase lalu jalankan ulang aplikasi."
+            title="Konfigurasi Supabase belum lengkap"
+            subtitle="Lengkapi environment variable Supabase lalu jalankan ulang aplikasi."
           />
           <ul className="space-y-1 text-sm">
             {missing.map((key) => (
@@ -172,7 +207,7 @@ export default function AuthActionPage() {
     );
   }
 
-  if (!mode || !oobCode) {
+  if (!mode) {
     return (
       <div className="container mx-auto max-w-xl py-16">
         <CardX tone="surface" padding="lg" className="space-y-4">
