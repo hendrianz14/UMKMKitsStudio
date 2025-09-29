@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
-import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Route } from "next";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MailCheck } from "lucide-react";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 import AuthGate from "@/components/auth/AuthGate";
 import { CreditBadge } from "@/components/credit-badge";
@@ -14,13 +13,24 @@ import { Button } from "@/components/ui/button";
 import { CardX, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UploadDropzone } from "@/components/upload-dropzone";
-import { getFirebaseAuth, getFirebaseFirestore } from "@/lib/firebase-client";
+import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 
 interface JobItem {
   id: string;
   kind: string;
   status: string;
   createdAt: string;
+}
+
+interface ProfileRecord {
+  onboarding_completed?: boolean | null;
+  onboarding_type?: OnboardingAnswers["userType"] | null;
+  onboarding_purpose?: string | null;
+  onboarding_industry?: string | null;
+  onboarding_source?: string | null;
+  verification_pending?: boolean | null;
+  verified_at?: string | null;
+  credits?: number | null;
 }
 
 const CREDIT_COST: Record<string, number> = {
@@ -39,25 +49,34 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const credits = 320;
-  const [user, setUser] = useState<User | null>(null);
-  const [userDoc, setUserDoc] = useState<
-    | {
-        onboardingCompleted?: boolean;
-        onboarding?: {
-          type?: OnboardingAnswers["userType"];
-          purpose?: string;
-          industry?: string;
-          source?: string;
-        };
-        verificationPending?: boolean;
-        verifiedAt?: unknown;
-        credits?: number;
-      }
-    | null
-  >(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [profile, setProfile] = useState<ProfileRecord | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [dismissedOnboarding, setDismissedOnboarding] = useState(false);
   const [showVerificationNotice, setShowVerificationNotice] = useState(false);
+  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
+
+  const fetchProfile = useCallback(async () => {
+    if (!supabase || !user) {
+      setProfile(null);
+      return;
+    }
+    try {
+      const { data, error: profileError } = await supabase
+        .from("profiles")
+        .select(
+          "onboarding_completed,onboarding_type,onboarding_purpose,onboarding_industry,onboarding_source,verification_pending,verified_at,credits"
+        )
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (profileError && profileError.code !== "42P01") {
+        console.error("[dashboard] Gagal memuat profil", profileError);
+      }
+      setProfile(data ?? null);
+    } catch (profileError) {
+      console.error("[dashboard] Kesalahan tak terduga memuat profil", profileError);
+    }
+  }, [supabase, user]);
 
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_API_BASE;
@@ -83,38 +102,55 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    const auth = getFirebaseAuth();
-    if (!auth) return;
-    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-      setUser(authUser);
+    if (!supabase) return;
+    let unsubscribed = false;
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!unsubscribed) {
+          setUser(data.session?.user ?? null);
+        }
+      })
+      .catch((authError) => {
+        console.warn("[dashboard] Gagal mengambil sesi", authError);
+        if (!unsubscribed) setUser(null);
+      });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
     });
-    return () => unsubscribe();
-  }, []);
+
+    return () => {
+      unsubscribed = true;
+      listener.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   useEffect(() => {
-    const firestore = getFirebaseFirestore();
-    if (!firestore || !user) return;
-
-    const ref = doc(firestore, "users", user.uid);
-    const unsubscribe = onSnapshot(ref, (snapshot) => {
-      setUserDoc(snapshot.exists() ? (snapshot.data() as typeof userDoc) : null);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
+    void fetchProfile();
+  }, [fetchProfile]);
 
   useEffect(() => {
-    if (!user || !userDoc) return;
-    if (userDoc.verificationPending === true && user.emailVerified !== true) {
+    if (!user) return;
+    const verificationPending = profile?.verification_pending === true;
+    const emailVerified = Boolean(user.email_confirmed_at);
+    if (verificationPending && !emailVerified) {
       if (!locale) return;
       const email = user.email ? encodeURIComponent(user.email) : "";
       const target = `/${locale}/verify-email${email ? `?email=${email}` : ""}` as Route;
       router.replace(target);
     }
-  }, [locale, router, user, userDoc]);
+  }, [locale, profile?.verification_pending, router, user]);
 
   const onboardingDefaults = useMemo<OnboardingAnswers | undefined>(() => {
-    const onboarding = userDoc?.onboarding;
+    if (!profile) return undefined;
+    const onboarding = {
+      type: profile.onboarding_type,
+      purpose: profile.onboarding_purpose ?? undefined,
+      industry: profile.onboarding_industry ?? undefined,
+      source: profile.onboarding_source ?? undefined,
+    };
     if (!onboarding) return undefined;
     return {
       userType: onboarding.type === "team" ? "team" : "personal",
@@ -122,11 +158,11 @@ export default function DashboardPage() {
       businessType: onboarding.industry ?? "",
       source: onboarding.source ?? "",
     };
-  }, [userDoc?.onboarding]);
+  }, [profile]);
 
   const shouldPromptOnboarding = useMemo(() => {
-    return Boolean(user && userDoc && userDoc.onboardingCompleted !== true);
-  }, [user, userDoc]);
+    return Boolean(user && profile && profile.onboarding_completed !== true);
+  }, [profile, user]);
 
   useEffect(() => {
     if (shouldPromptOnboarding && !dismissedOnboarding) {
@@ -148,24 +184,31 @@ export default function DashboardPage() {
   }, [pathname, router, searchParams]);
 
   const handleOnboardingSave = async (answers: OnboardingAnswers) => {
-    const firestore = getFirebaseFirestore();
-    if (!firestore || !user) return;
-    await setDoc(
-      doc(firestore, "users", user.uid),
-      {
-        onboardingCompleted: true,
-        onboarding: {
-          type: answers.userType,
-          purpose: answers.goal,
-          industry: answers.businessType,
-          source: answers.source,
-        },
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-    setIsOnboardingOpen(false);
-    setDismissedOnboarding(false);
+    if (!supabase || !user) return;
+    try {
+      const { error: upsertError } = await supabase
+        .from("profiles")
+        .upsert(
+          {
+            user_id: user.id,
+            onboarding_completed: true,
+            onboarding_type: answers.userType,
+            onboarding_purpose: answers.goal,
+            onboarding_industry: answers.businessType,
+            onboarding_source: answers.source,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+      if (upsertError && upsertError.code !== "42P01") {
+        throw upsertError;
+      }
+      setIsOnboardingOpen(false);
+      setDismissedOnboarding(false);
+      await fetchProfile();
+    } catch (upsertError) {
+      console.error("[dashboard] Gagal menyimpan onboarding", upsertError);
+    }
   };
 
   const handleOnboardingSkip = async () => {
