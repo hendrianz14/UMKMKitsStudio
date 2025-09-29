@@ -5,6 +5,7 @@ import * as functions from 'firebase-functions';
 import healthRouter from './routes/health.js';
 import aiRouter from './routes/ai.js';
 import paymentsRouter from './routes/payments.js';
+import authRouter from './routes/auth.js';
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.get('/', (_req, res) => {
   res.json({ status: 'online' });
 });
 
+app.use(authRouter);
 app.use(healthRouter);
 app.use(aiRouter);
 app.use(paymentsRouter);
