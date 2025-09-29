@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -231,7 +232,7 @@ export default function SignUpPage() {
           return;
         }
 
-        router.replace(dashboardPath);
+        router.replace(dashboardPath as Route);
       } catch (err) {
         if (typeof window !== "undefined") {
           console.error("[sign-up] Register error", err);
