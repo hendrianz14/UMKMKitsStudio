@@ -9,38 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { toast } from '@/components/ui/toast';
 import { useEditor } from '@/components/editor/EditorCanvas';
-import { getFirebaseAuth, getFirebaseFirestore, getFirebaseStorage } from '@/lib/firebase-client';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 const enhanceSchema = z.object({ imageUrl: z.string().url() });
 const captionSchema = z.object({ prompt: z.string().min(3) });
 const img2imgSchema = z.object({ imageUrl: z.string().url(), prompt: z.string().min(3) });
 
-async function uploadBlob(blob: Blob, format: 'png' | 'jpeg') {
-  const storage = getFirebaseStorage();
-  const firestore = getFirebaseFirestore();
-  const auth = getFirebaseAuth();
-  const uid = auth?.currentUser?.uid ?? 'anonymous';
-
-  if (!storage || !firestore) {
-    const url = URL.createObjectURL(blob);
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    return { url };
-  }
-
-  const extension = format === 'png' ? 'png' : 'jpg';
-  const path = `outputs/${uid}/${Date.now()}.${extension}`;
-  const fileRef = ref(storage, path);
-  await uploadBytes(fileRef, blob, { contentType: format === 'png' ? 'image/png' : 'image/jpeg' });
-  const url = await getDownloadURL(fileRef);
-  await addDoc(collection(firestore, 'assets'), {
-    uid,
-    url,
-    format,
-    createdAt: serverTimestamp(),
-    path
-  });
+async function uploadBlob(blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
   return { url };
 }
 
@@ -67,7 +43,7 @@ export function Toolbar() {
         backgroundColor: '#0B0F1A'
       });
       if (!blob) throw new Error('Gagal menghasilkan gambar.');
-      const { url } = await uploadBlob(blob, format);
+      const { url } = await uploadBlob(blob);
       toast.success('Export berhasil! 👏', {
         id: toastId,
         description: 'Desain tersimpan. Klik untuk membuka galeri.',

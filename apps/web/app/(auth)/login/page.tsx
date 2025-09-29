@@ -1,23 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5001";
-
-function buildUrl(path: string) {
-  const base = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
-  return `${base}${path}`;
-}
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
-export default function LoginEmailPage() {
+function LoginFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("Masukkan email kerja Anda.");
   const [status, setStatus] = useState<SubmitState>("idle");
   const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    const prefillEmail = searchParams?.get("email");
+    if (prefillEmail) {
+      setEmail(prefillEmail);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -37,7 +38,7 @@ export default function LoginEmailPage() {
       setStatus("loading");
       setMessage("Mengirim kode...");
       try {
-        const response = await fetch(buildUrl("/auth/request-otp"), {
+        const response = await fetch("/api/auth/request-otp", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email: sanitizedEmail }),
@@ -95,7 +96,7 @@ export default function LoginEmailPage() {
           />
           <button
             type="submit"
-            className="btn-primary w-full rounded-lg px-4 py-3 text-base font-semibold"
+            className="w-full rounded-lg bg-blue-600 px-4 py-3 text-base font-semibold text-white shadow transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:cursor-not-allowed disabled:bg-blue-600/60"
             disabled={disabled}
           >
             {status === "loading"
@@ -111,5 +112,21 @@ export default function LoginEmailPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[calc(100dvh-64px)] items-center justify-center px-4">
+          <div className="w-full max-w-md rounded-2xl bg-surface/80 p-8 text-center text-white/80">
+            Menyiapkan formulir login...
+          </div>
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
   );
 }

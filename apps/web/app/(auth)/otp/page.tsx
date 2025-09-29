@@ -3,13 +3,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5001";
-
-function buildUrl(path: string) {
-  const base = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
-  return `${base}${path}`;
-}
-
 type SubmitState = "idle" | "loading" | "success" | "error";
 
 function OtpContent() {
@@ -53,7 +46,7 @@ function OtpContent() {
       setStatus("loading");
       setMessage("Memverifikasi kode...");
       try {
-        const response = await fetch(buildUrl("/auth/verify-otp"), {
+        const response = await fetch("/api/auth/verify-otp", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email: targetEmail, code }),
@@ -88,7 +81,7 @@ function OtpContent() {
     setStatus("loading");
     setMessage("Mengirim ulang kode...");
     try {
-      const response = await fetch(buildUrl("/auth/request-otp"), {
+      const response = await fetch("/api/auth/request-otp", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email: targetEmail }),
@@ -145,7 +138,7 @@ function OtpContent() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="btn-primary w-full rounded-lg px-4 py-3 text-base font-semibold"
+            className="w-full rounded-lg bg-blue-600 px-4 py-3 text-base font-semibold text-white shadow transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:cursor-not-allowed disabled:bg-blue-600/60"
           >
             {status === "loading" ? "Memproses..." : "Verifikasi"}
           </button>
