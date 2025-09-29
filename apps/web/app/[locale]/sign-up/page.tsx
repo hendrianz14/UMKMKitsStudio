@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   EmailField,
@@ -17,18 +17,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { supaBrowser } from "@/lib/supabase-browser";
 import { isAllowedGmail, isValidEmailFormat, normalizeEmail } from "@/lib/email";
 
-function createBrowserSupabase(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    return null;
-  }
-
-  return createClient(url, anonKey);
-}
 
 const GoogleIcon = () => (
   <svg
@@ -61,7 +52,7 @@ export default function SignUpPage() {
   const { locale } = useParams<{ locale: string }>();
   const router = useRouter();
   const t = useTranslations("auth");
-  const supabase = useMemo(() => createBrowserSupabase(), []);
+  const supabase = useMemo<SupabaseClient | null>(() => supaBrowser(), []);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

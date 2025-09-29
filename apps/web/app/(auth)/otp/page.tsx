@@ -3,13 +3,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5001";
-
-function buildUrl(path: string) {
-  const base = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
-  return `${base}${path}`;
-}
-
 type SubmitState = "idle" | "loading" | "success" | "error";
 
 function OtpContent() {
@@ -53,11 +46,10 @@ function OtpContent() {
       setStatus("loading");
       setMessage("Memverifikasi kode...");
       try {
-        const response = await fetch(buildUrl("/auth/verify-otp"), {
+        const response = await fetch("/api/auth/verify-otp", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email: targetEmail, code }),
-          credentials: "include"
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) {
@@ -88,11 +80,10 @@ function OtpContent() {
     setStatus("loading");
     setMessage("Mengirim ulang kode...");
     try {
-      const response = await fetch(buildUrl("/auth/request-otp"), {
+      const response = await fetch("/api/auth/request-otp", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email: targetEmail }),
-        credentials: "include"
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {

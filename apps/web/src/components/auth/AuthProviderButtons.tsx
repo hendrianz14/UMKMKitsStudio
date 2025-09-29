@@ -78,11 +78,16 @@ export function AuthProviderButtons({
           if (!supabase) {
             throw new Error("Supabase belum terkonfigurasi");
           }
+          const origin = typeof window !== "undefined" ? window.location.origin : undefined;
           const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
-            options: {
-              queryParams: { prompt: "select_account" },
-            },
+            options:
+              origin
+                ? {
+                    redirectTo: `${origin}/auth/callback`,
+                    queryParams: { prompt: "select_account" },
+                  }
+                : { queryParams: { prompt: "select_account" } },
           });
           if (error) {
             throw error;

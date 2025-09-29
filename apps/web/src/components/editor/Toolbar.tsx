@@ -109,7 +109,6 @@ export function Toolbar() {
   };
 
   const triggerAI = async (action: 'enhance' | 'img2img' | 'caption') => {
-    const baseUrl = (process.env.NEXT_PUBLIC_API_BASE ?? '').replace(/\/$/, '') || '/api';
     setRunningAction(action);
     const jobId = crypto.randomUUID();
     const imageLayer = layers.find((layer) => layer.type === 'image' && layer.visible) as typeof layers[number] | undefined;
@@ -143,7 +142,7 @@ export function Toolbar() {
       }
 
       upsertJob({ id: jobId, action, status: 'pending', message: 'Job dikirim ke AI.' });
-      const response = await fetch(`${baseUrl}/editor/${action}`, {
+      const response = await fetch(`/api/editor/${action}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
