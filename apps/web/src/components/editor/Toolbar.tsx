@@ -9,39 +9,63 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { toast } from '@/components/ui/toast';
 import { useEditor } from '@/components/editor/EditorCanvas';
-import { getFirebaseAuth, getFirebaseFirestore, getFirebaseStorage } from '@/lib/firebase-client';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 
 const enhanceSchema = z.object({ imageUrl: z.string().url() });
 const captionSchema = z.object({ prompt: z.string().min(3) });
 const img2imgSchema = z.object({ imageUrl: z.string().url(), prompt: z.string().min(3) });
 
 async function uploadBlob(blob: Blob, format: 'png' | 'jpeg') {
-  const storage = getFirebaseStorage();
-  const firestore = getFirebaseFirestore();
-  const auth = getFirebaseAuth();
-  const uid = auth?.currentUser?.uid ?? 'anonymous';
+  const supabase = getSupabaseBrowserClient();
+  const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ?? 'assets';
+  const extension = format === 'png' ? 'png' : 'jpg';
+  const fallbackUrl = URL.createObjectURL(blob);
 
-  if (!storage || !firestore) {
-    const url = URL.createObjectURL(blob);
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    return { url };
+  if (!supabase) {
+    setTimeout(() => URL.revokeObjectURL(fallbackUrl), 60_000);
+    return { url: fallbackUrl };
   }
 
-  const extension = format === 'png' ? 'png' : 'jpg';
-  const path = `outputs/${uid}/${Date.now()}.${extension}`;
-  const fileRef = ref(storage, path);
-  await uploadBytes(fileRef, blob, { contentType: format === 'png' ? 'image/png' : 'image/jpeg' });
-  const url = await getDownloadURL(fileRef);
-  await addDoc(collection(firestore, 'assets'), {
-    uid,
-    url,
-    format,
-    createdAt: serverTimestamp(),
-    path
-  });
-  return { url };
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user?.id ?? 'anonymous';
+    const path = `outputs/${userId}/${Date.now()}.${extension}`;
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(path, blob, { contentType: format === 'png' ? 'image/png' : 'image/jpeg' });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(path);
+    const url = publicUrlData?.publicUrl;
+    if (!url) {
+      throw new Error('Tidak dapat mengambil URL publik.');
+    }
+
+    try {
+      await supabase
+        .from('assets')
+        .insert({
+          user_id: sessionData.session?.user?.id ?? null,
+          url,
+          format,
+          path,
+        });
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[toolbar] Gagal mencatat metadata aset', error);
+      }
+    }
+
+    setTimeout(() => URL.revokeObjectURL(fallbackUrl), 60_000);
+    return { url };
+  } catch (error) {
+    console.warn('[toolbar] Gagal mengunggah ke Supabase Storage', error);
+    setTimeout(() => URL.revokeObjectURL(fallbackUrl), 60_000);
+    return { url: fallbackUrl };
+  }
 }
 
 export function Toolbar() {

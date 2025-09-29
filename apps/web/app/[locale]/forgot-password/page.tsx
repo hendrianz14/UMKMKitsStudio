@@ -10,12 +10,11 @@ import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { clientEnvFlags } from "@/lib/env-flags-client";
-import { getFirebaseAuth } from "@/lib/firebase-client";
 import {
-  collectMissingFirebaseEnvKeys,
-  fetchMissingFirebaseEnvKeys,
-  type FirebaseEnvKey,
-} from "@/lib/firebase-env-check";
+  collectMissingSupabaseEnvKeys,
+  fetchMissingSupabaseEnvKeys,
+  type SupabaseEnvKey,
+} from "@/lib/supabase-env-check";
 
 export default function ForgotPasswordPage() {
   const { locale } = useParams<{ locale: string }>();
@@ -25,17 +24,16 @@ export default function ForgotPasswordPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
-  const [missing, setMissing] = useState<FirebaseEnvKey[]>(collectMissingFirebaseEnvKeys());
-  const auth = getFirebaseAuth();
+  const [missing, setMissing] = useState<SupabaseEnvKey[]>(collectMissingSupabaseEnvKeys());
+  const envReady = missing.length === 0;
 
   useEffect(() => {
-    if (!auth) {
-      fetchMissingFirebaseEnvKeys().then((serverMissing) => {
-        if (!serverMissing.length) return;
-        setMissing((prev) => Array.from(new Set([...prev, ...serverMissing])));
-      });
-    }
-  }, [auth]);
+    if (envReady) return;
+    fetchMissingSupabaseEnvKeys().then((serverMissing) => {
+      if (!serverMissing.length) return;
+      setMissing((prev) => Array.from(new Set([...prev, ...serverMissing])));
+    });
+  }, [envReady]);
 
   useEffect(() => {
     if (!cooldownEndsAt) return;
@@ -65,14 +63,13 @@ export default function ForgotPasswordPage() {
     event.preventDefault();
     setError(null);
     setSuccessMessage(null);
-    const currentAuth = getFirebaseAuth();
-    if (!currentAuth) {
-      const missingKeys = collectMissingFirebaseEnvKeys(clientEnvFlags());
+    if (!envReady) {
+      const missingKeys = collectMissingSupabaseEnvKeys(clientEnvFlags());
       setMissing((prev) => Array.from(new Set([...prev, ...missingKeys])));
       setError(
         missingKeys.length
-          ? `Konfigurasi Firebase belum lengkap di client: ${missingKeys.join(", ")}`
-          : "Konfigurasi Firebase belum lengkap."
+          ? `Konfigurasi Supabase belum lengkap di client: ${missingKeys.join(", ")}`
+          : "Konfigurasi Supabase belum lengkap."
       );
       return;
     }
@@ -116,14 +113,11 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  if (!auth) {
+  if (!envReady) {
     return (
       <div className="container mx-auto max-w-lg py-16">
         <CardX tone="surface" padding="lg">
-          <CardXHeader
-            title="Konfigurasi Firebase belum lengkap"
-            subtitle="Lengkapi environment variable Firebase lalu jalankan ulang aplikasi."
-          />
+          <CardXHeader title="Konfigurasi Supabase belum lengkap" subtitle="Lengkapi environment variable Supabase lalu jalankan ulang aplikasi." />
           <ul className="space-y-1 text-sm">
             {missing.map((key) => (
               <li key={key} className="flex items-center gap-2">
@@ -195,7 +189,7 @@ export default function ForgotPasswordPage() {
             </p>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            Tautan reset berlaku sekitar 1 jam (aturan Firebase). Cek folder Spam/Promotions bila belum terlihat.
+            Tautan reset berlaku sekitar 1 jam. Cek folder Spam/Promotions bila belum terlihat.
           </p>
         </form>
         <CardXFooter>

@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { GoogleAuthProvider, signInWithPopup, type Auth } from "firebase/auth";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getFirebaseAuth } from "@/lib/firebase-client";
 import { cn } from "@/lib/utils";
+import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 
 interface AuthProviderButtonsProps {
   className?: string;
@@ -41,7 +40,7 @@ const GoogleIcon = () => (
   </svg>
 );
 
-function getGoogleEnabledFlag(auth: Auth | null) {
+function getGoogleEnabledFlag() {
   if (process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED === "true") {
     return true;
   }
@@ -50,10 +49,7 @@ function getGoogleEnabledFlag(auth: Auth | null) {
     return false;
   }
 
-  // Fallback: assume provider is enabled when env flag is absent.
-  // Firebase JS SDK does not expose enabled providers without admin access,
-  // so we rely on project configuration.
-  return Boolean(auth);
+  return true;
 }
 
 export function AuthProviderButtons({
@@ -62,7 +58,7 @@ export function AuthProviderButtons({
   onSuccess,
   disabled,
 }: AuthProviderButtonsProps) {
-  const auth = getFirebaseAuth();
+  const supabase = getSupabaseBrowserClient();
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
   const providers = useMemo(() => {
@@ -73,32 +69,37 @@ export function AuthProviderButtons({
       icon: ReactNode;
     }> = [];
 
-    if (getGoogleEnabledFlag(auth)) {
+    if (getGoogleEnabledFlag()) {
       list.push({
         id: "google",
         label: "Masuk dengan Google",
         icon: <GoogleIcon />, // ensure unique instance
         onClick: async () => {
-          if (!auth) {
-            throw new Error("Firebase belum terkonfigurasi");
+          if (!supabase) {
+            throw new Error("Supabase belum terkonfigurasi");
           }
-          const provider = new GoogleAuthProvider();
-          provider.setCustomParameters({ prompt: "select_account" });
-          await signInWithPopup(auth, provider);
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+              queryParams: { prompt: "select_account" },
+            },
+          });
+          if (error) {
+            throw error;
+          }
         },
       });
     }
 
     return list;
-  }, [auth]);
+  }, [supabase]);
 
   const mapProviderError = (error: unknown) => {
-    const code = (error as { code?: string })?.code;
-    if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+    if (error instanceof Error && error.message.includes("Popup closed")) {
       return null;
     }
 
-    if (code === "auth/redirect-url-mismatch" || code === "auth/unauthorized-domain") {
+    if (error instanceof Error && error.message.includes("redirect_uri_mismatch")) {
       return new Error(
         "Konfigurasi Google OAuth belum sesuai (redirect_uri_mismatch). Hubungi tim untuk memperbaruinya."
       );

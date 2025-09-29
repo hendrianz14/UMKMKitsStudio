@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 
 import { NextResponse } from "next/server";
-import { getFirebaseAdminFirestore } from "@/lib/firebase-admin";
+import { supaAdmin } from "@/lib/supabase-server";
 import { isValidEmailFormat, normalizeEmail } from "@/lib/email";
 
 const RATE_LIMIT_WINDOW_MS = 1000 * 60 * 60 * 3; // 3 hours
@@ -12,25 +12,13 @@ function getRetryAfterMinutes(lastSentMs: number, nowMs: number) {
 }
 
 function extractMillis(value: unknown): number | null {
+  if (!value) return null;
   if (typeof value === "number") {
     return value;
   }
-  if (value instanceof Date) {
-    return value.getTime();
-  }
-  if (
-    value &&
-    typeof value === "object" &&
-    typeof (value as { toMillis?: unknown }).toMillis === "function"
-  ) {
-    try {
-      return (value as { toMillis: () => number }).toMillis();
-    } catch (error) {
-      console.warn("[password-reset] Failed to read Firestore timestamp", error);
-      return null;
-    }
-  }
-  return null;
+  const date = new Date(value as string);
+  const time = date.getTime();
+  return Number.isNaN(time) ? null : time;
 }
 
 export async function POST(request: Request) {
@@ -50,13 +38,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: defaultMessage });
   }
 
-  const firestore = getFirebaseAdminFirestore();
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  let supabase: ReturnType<typeof supaAdmin>;
+  try {
+    supabase = supaAdmin();
+  } catch (error) {
+    console.error("[password-reset] Failed to initialize Supabase admin", error);
+    return NextResponse.json(
+      { message: "Layanan sedang tidak tersedia. Coba lagi nanti." },
+      { status: 500 }
+    );
+  }
   const baseUrl =
     process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL;
 
-  if (!firestore || !apiKey) {
-    console.error("[password-reset] Missing Firebase configuration");
+  if (!supabase) {
+    console.error("[password-reset] Missing Supabase configuration");
     return NextResponse.json(
       { message: "Layanan sedang tidak tersedia. Coba lagi nanti." },
       { status: 500 }
@@ -64,13 +60,23 @@ export async function POST(request: Request) {
   }
 
   const emailHash = crypto.createHash("sha256").update(normalizedEmail).digest("hex");
-  const docRef = firestore.collection("password_resets").doc(emailHash);
   const now = Date.now();
   try {
-    const snapshot = await docRef.get();
-    const data = snapshot.exists ? snapshot.data() : null;
-    const lastSentValue = data?.lastSent;
-    const lastSentMs = extractMillis(lastSentValue);
+    const { data, error: fetchError } = await supabase
+      .from("password_resets")
+      .select("last_sent, created_at")
+      .eq("email_hash", emailHash)
+      .maybeSingle();
+
+    if (fetchError && fetchError.code !== "42P01") {
+      console.error("[password-reset] Failed to read rate limit", fetchError);
+      return NextResponse.json(
+        { message: "Gagal memproses permintaan. Coba lagi nanti." },
+        { status: 500 }
+      );
+    }
+
+    const lastSentMs = extractMillis(data?.last_sent);
 
     if (lastSentMs && now - lastSentMs < RATE_LIMIT_WINDOW_MS) {
       const retryAfterMinutes = getRetryAfterMinutes(lastSentMs, now);
@@ -84,30 +90,16 @@ export async function POST(request: Request) {
     }
 
     const actionUrl = baseUrl ? `${baseUrl.replace(/\/$/, "")}/auth/action` : undefined;
-    const response = await fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          requestType: "PASSWORD_RESET",
-          email: normalizedEmail,
-          continueUrl: actionUrl,
-          canHandleCodeInApp: false,
-        }),
-      }
-    );
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: actionUrl,
+    });
 
-    if (!response.ok) {
-      const errorPayload = (await response.json().catch(() => null)) as
-        | { error?: { message?: string } }
-        | null;
-      const message = errorPayload?.error?.message;
-
-      if (message === "EMAIL_NOT_FOUND" || message === "USER_DISABLED") {
-        // We intentionally respond with success to avoid leaking account existence.
+    if (resetError) {
+      const status = (resetError as { status?: number }).status ?? 500;
+      if (status === 400 || status === 404) {
+        // Hide account existence information.
       } else {
-        console.error("[password-reset] sendOobCode failed", message ?? response.statusText);
+        console.error("[password-reset] resetPasswordForEmail failed", resetError);
         return NextResponse.json(
           { message: "Gagal memproses permintaan. Coba lagi nanti." },
           { status: 500 }
@@ -115,14 +107,21 @@ export async function POST(request: Request) {
       }
     }
 
-    await docRef.set(
-      {
-        createdAt: data?.createdAt ?? new Date(now),
-        lastSent: new Date(now),
-        updatedAt: new Date(now),
-      },
-      { merge: true }
-    );
+    try {
+      await supabase.from("password_resets").upsert(
+        {
+          email_hash: emailHash,
+          created_at: data?.created_at ?? new Date(now).toISOString(),
+          last_sent: new Date(now).toISOString(),
+          updated_at: new Date(now).toISOString(),
+        },
+        { onConflict: "email_hash" }
+      );
+    } catch (upsertError) {
+      if ((upsertError as { code?: string })?.code !== "42P01") {
+        console.warn("[password-reset] Failed to persist rate limit", upsertError);
+      }
+    }
 
     return NextResponse.json({ message: defaultMessage });
   } catch (error) {
