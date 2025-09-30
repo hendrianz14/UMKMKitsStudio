@@ -42,7 +42,6 @@ export default function VerifyEmailPage() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
 
   useEffect(() => {
-    if (!supabase) return;
     let unsubscribed = false;
 
     supabase.auth
@@ -142,11 +141,6 @@ export default function VerifyEmailPage() {
   };
 
   const handleCheckVerification = async () => {
-    if (!supabase) {
-      setErrorMessage("Supabase belum siap. Coba lagi beberapa saat.");
-      return;
-    }
-
     setChecking(true);
     setErrorMessage(null);
     setInfoMessage(null);

@@ -55,11 +55,6 @@ export default function AuthNav({
   const signUpHref = activeLocale ? SIGN_UP_ROUTES[activeLocale] : "/sign-up";
 
   useEffect(() => {
-    if (!supabase) {
-      setAuthState("guest");
-      return;
-    }
-
     let cancelled = false;
 
     supabase.auth
@@ -106,9 +101,7 @@ export default function AuthNav({
 
   const handleSignOut = () => {
     handleNavigate();
-    if (supabase) {
-      void supabase.auth.signOut();
-    }
+    void supabase.auth.signOut();
   };
 
   return (

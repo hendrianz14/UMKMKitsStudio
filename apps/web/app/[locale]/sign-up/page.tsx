@@ -6,7 +6,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   EmailField,
@@ -52,7 +51,6 @@ export default function SignUpPage() {
   const { locale } = useParams<{ locale: string }>();
   const router = useRouter();
   const t = useTranslations("auth");
-  const supabase = useMemo<SupabaseClient | null>(() => supaBrowser(), []);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,6 +61,18 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [configError, setConfigError] = useState(false);
+
+  useEffect(() => {
+    try {
+      supaBrowser();
+    } catch (err) {
+      if (typeof window !== "undefined") {
+        console.error("[sign-up] Supabase config error", err);
+      }
+      setConfigError(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -170,13 +180,14 @@ export default function SignUpPage() {
         setError("Kode OTP harus 6 digit.");
         return;
       }
-      if (!supabase) {
-        setError("Konfigurasi Supabase belum lengkap.");
-        return;
-      }
 
       setLoading(true);
       try {
+        if (configError) {
+          setError("Konfigurasi Supabase belum lengkap.");
+          return;
+        }
+
         const verifyResponse = await fetch("/api/auth/verify-otp", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -214,6 +225,7 @@ export default function SignUpPage() {
           return;
         }
 
+        const supabase = supaBrowser();
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: normalizedEmail,
           password,
@@ -228,33 +240,34 @@ export default function SignUpPage() {
         if (typeof window !== "undefined") {
           console.error("[sign-up] Register error", err);
         }
-        setError("Gagal mendaftar. Silakan coba lagi.");
+        if (err instanceof Error && err.message.includes("[supabase-browser]")) {
+          setConfigError(true);
+          setError("Konfigurasi Supabase belum lengkap.");
+        } else {
+          setError("Gagal mendaftar. Silakan coba lagi.");
+        }
       } finally {
         setLoading(false);
       }
     },
-    [dashboardPath, email, name, otpCode, otpSent, password, passwordValid, router, supabase]
+    [configError, dashboardPath, email, name, otpCode, otpSent, password, passwordValid, router]
   );
 
   const handleGoogleSignIn = useCallback(async () => {
     setError(null);
-    if (!supabase) {
-      setError("Konfigurasi Supabase belum lengkap.");
-      return;
-    }
     if (googleLoading) return;
 
     setGoogleLoading(true);
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : undefined;
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      if (configError) {
+        setError("Konfigurasi Supabase belum lengkap.");
+        setGoogleLoading(false);
+        return;
+      }
+
+      const { error: oauthError } = await supaBrowser().auth.signInWithOAuth({
         provider: "google",
-        options:
-          origin
-            ? {
-                redirectTo: `${origin}/auth/callback`,
-              }
-            : undefined,
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (oauthError) {
         setError(oauthError.message || "Gagal masuk dengan Google.");
@@ -264,12 +277,17 @@ export default function SignUpPage() {
       if (typeof window !== "undefined") {
         console.error("[sign-up] Google login error", err);
       }
-      setError("Gagal masuk dengan Google. Coba lagi nanti.");
+      if (err instanceof Error && err.message.includes("[supabase-browser]")) {
+        setConfigError(true);
+        setError("Konfigurasi Supabase belum lengkap.");
+      } else {
+        setError("Gagal masuk dengan Google. Coba lagi nanti.");
+      }
       setGoogleLoading(false);
     }
-  }, [googleLoading, supabase]);
+  }, [configError, googleLoading]);
 
-  if (!supabase) {
+  if (configError) {
     return (
       <div className="container mx-auto max-w-lg py-16">
         <CardX tone="surface" padding="lg">

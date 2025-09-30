@@ -57,7 +57,7 @@ export default function DashboardPage() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
 
   const fetchProfile = useCallback(async () => {
-    if (!supabase || !user) {
+    if (!user) {
       setProfile(null);
       return;
     }
@@ -95,7 +95,6 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!supabase) return;
     let unsubscribed = false;
 
     supabase.auth
@@ -177,7 +176,7 @@ export default function DashboardPage() {
   }, [pathname, router, searchParams]);
 
   const handleOnboardingSave = async (answers: OnboardingAnswers) => {
-    if (!supabase || !user) return;
+    if (!user) return;
     try {
       const { error: upsertError } = await supabase
         .from("profiles")

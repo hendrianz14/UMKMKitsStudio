@@ -58,7 +58,6 @@ export function AuthProviderButtons({
   onSuccess,
   disabled,
 }: AuthProviderButtonsProps) {
-  const supabase = getSupabaseBrowserClient();
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
   const providers = useMemo(() => {
@@ -75,19 +74,15 @@ export function AuthProviderButtons({
         label: "Masuk dengan Google",
         icon: <GoogleIcon />, // ensure unique instance
         onClick: async () => {
-          if (!supabase) {
-            throw new Error("Supabase belum terkonfigurasi");
+          if (typeof window === "undefined") {
+            throw new Error("Window tidak tersedia untuk OAuth redirect");
           }
-          const origin = typeof window !== "undefined" ? window.location.origin : undefined;
-          const { error } = await supabase.auth.signInWithOAuth({
+          const { error } = await getSupabaseBrowserClient().auth.signInWithOAuth({
             provider: "google",
-            options:
-              origin
-                ? {
-                    redirectTo: `${origin}/auth/callback`,
-                    queryParams: { prompt: "select_account" },
-                  }
-                : { queryParams: { prompt: "select_account" } },
+            options: {
+              redirectTo: `${window.location.origin}/auth/callback`,
+              queryParams: { prompt: "select_account" },
+            },
           });
           if (error) {
             throw error;
@@ -97,7 +92,7 @@ export function AuthProviderButtons({
     }
 
     return list;
-  }, [supabase]);
+  }, []);
 
   const mapProviderError = (error: unknown) => {
     if (error instanceof Error && error.message.includes("Popup closed")) {

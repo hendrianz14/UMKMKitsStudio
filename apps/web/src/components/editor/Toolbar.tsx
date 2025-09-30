@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Download, FlipHorizontal2, FlipVertical2, ImageDown, Loader2, Move, RotateCw, Sparkles, Wand2 } from 'lucide-react';
 import { toBlob } from 'html-to-image';
 import { z } from 'zod';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
@@ -16,15 +17,18 @@ const captionSchema = z.object({ prompt: z.string().min(3) });
 const img2imgSchema = z.object({ imageUrl: z.string().url(), prompt: z.string().min(3) });
 
 async function uploadBlob(blob: Blob, format: 'png' | 'jpeg') {
-  const supabase = getSupabaseBrowserClient();
-  const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ?? 'assets';
-  const extension = format === 'png' ? 'png' : 'jpg';
-  const fallbackUrl = URL.createObjectURL(blob);
-
-  if (!supabase) {
+  let supabase: SupabaseClient;
+  try {
+    supabase = getSupabaseBrowserClient();
+  } catch (error) {
+    console.error('[toolbar] Supabase client unavailable', error);
+    const fallbackUrl = URL.createObjectURL(blob);
     setTimeout(() => URL.revokeObjectURL(fallbackUrl), 60_000);
     return { url: fallbackUrl };
   }
+  const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ?? 'assets';
+  const extension = format === 'png' ? 'png' : 'jpg';
+  const fallbackUrl = URL.createObjectURL(blob);
 
   try {
     const { data: sessionData } = await supabase.auth.getSession();

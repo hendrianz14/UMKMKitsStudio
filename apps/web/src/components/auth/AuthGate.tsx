@@ -21,12 +21,6 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const signInPath = resolvedLocale ? SIGN_IN_ROUTES[resolvedLocale] : "/sign-in";
 
   useEffect(() => {
-    if (!supabase) {
-      setIsAuthenticated(false);
-      router.replace(signInPath);
-      return;
-    }
-
     let unsubscribed = false;
 
     supabase.auth
