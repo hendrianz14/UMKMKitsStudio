@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { Route } from "next";
 import { supaBrowser } from "@/lib/supabase-browser";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -31,8 +32,12 @@ function Inner() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       }).catch(() => {});
 
-      const to = search.get("redirect") || "/dashboard";
-      router.replace(to);
+      const redirectParam = search.get("redirect");
+      const destination =
+        redirectParam && redirectParam.startsWith("/")
+          ? (redirectParam as Route)
+          : ("/dashboard" as Route);
+      router.replace(destination);
     })();
   }, [router, search]);
 

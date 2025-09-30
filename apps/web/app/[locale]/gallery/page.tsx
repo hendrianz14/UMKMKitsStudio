@@ -16,11 +16,12 @@ const demoAssets = templates.map((template, index) => ({
 export default async function GalleryPage({
   params,
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const user = await getServerUser();
   if (!user) {
-    redirect(`/login?redirect=/${params.locale}/gallery`);
+    redirect(`/login?redirect=/${locale}/gallery`);
   }
   return (
     <div className="space-y-8">

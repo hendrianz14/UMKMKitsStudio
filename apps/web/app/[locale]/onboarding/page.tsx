@@ -6,11 +6,12 @@ import OnboardingClient from "./_client";
 export default async function Page({
   params,
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const user = await getServerUser();
   if (!user) {
-    redirect(`/login?redirect=/${params.locale}/onboarding`);
+    redirect(`/login?redirect=/${locale}/onboarding`);
   }
   return <OnboardingClient />;
 }

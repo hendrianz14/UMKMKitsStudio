@@ -8,11 +8,12 @@ export const dynamic = "force-dynamic";
 export default async function Page({
   params,
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const user = await getServerUser();
   if (!user) {
-    redirect(`/login?redirect=/${params.locale}/dashboard`);
+    redirect(`/login?redirect=/${locale}/dashboard`);
   }
   return <DashboardClient />;
 }
