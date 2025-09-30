@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseBrowserClient } from "@/lib/supabase-browser";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 import { cn } from "@/lib/utils";
 import {
@@ -31,7 +31,7 @@ export default function AuthActionPage() {
   const searchParams = useSearchParams();
   const { locale } = useParams<{ locale: string }>();
   const router = useRouter();
-  const supabase = useMemo<SupabaseClient | null>(() => {
+  const supabase = useMemo<SupabaseBrowserClient | null>(() => {
     try {
       return getSupabaseBrowserClient();
     } catch (error) {
