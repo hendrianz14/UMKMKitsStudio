@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
+import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supaBrowser } from "@/lib/supabase-browser";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -31,7 +32,13 @@ function Inner() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       }).catch(() => {});
 
-      router.replace(search.get("redirect") || "/dashboard");
+      const redirectParam = search.get("redirect");
+      const target =
+        redirectParam && redirectParam.startsWith("/")
+          ? (redirectParam as Route)
+          : ("/dashboard" as Route);
+
+      router.replace(target);
     })();
   }, [router, search]);
 
