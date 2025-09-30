@@ -1,10 +1,9 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
-import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supaBrowser } from "@/lib/supabase-browser";
-
+import type { SupabaseClient } from "@supabase/supabase-js";
 export const dynamic = "force-dynamic";
 
 function Inner() {
@@ -13,12 +12,15 @@ function Inner() {
 
   useEffect(() => {
     (async () => {
-      const sb = supaBrowser();
+      const sb: SupabaseClient = supaBrowser();
 
       const code = search.get("code");
       if (code) {
         const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
-        if (error) return router.replace("/login?error=oauth");
+        if (error) {
+          console.error("PKCE exchange:", error);
+          return router.replace("/login?error=oauth");
+        }
       }
 
       const {
@@ -31,13 +33,7 @@ function Inner() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       }).catch(() => {});
 
-      const redirectParam = search.get("redirect");
-      const target =
-        redirectParam && redirectParam.startsWith("/")
-          ? (redirectParam as Route)
-          : ("/dashboard" as Route);
-
-      router.replace(target);
+      router.replace(search.get("redirect") || "/dashboard");
     })();
   }, [router, search]);
 
@@ -47,7 +43,6 @@ function Inner() {
     </div>
   );
 }
-
 export default function Page() {
   return (
     <Suspense
