@@ -75,33 +75,20 @@ export default function ForgotPasswordPage() {
     }
     setLoading(true);
     try {
-      const response = await fetch("/api/auth/request-password-reset", {
+      const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
 
-      if (response.status === 429) {
-        const payload = (await response.json().catch(() => ({}))) as {
-          retryAfterMinutes?: number;
-        };
-        const minutes = Number(payload.retryAfterMinutes ?? 0);
-        if (minutes > 0) {
-          setCooldownEndsAt(Date.now() + minutes * 60 * 1000);
-        }
-        const retryText = minutes > 0 ? `sekitar ${minutes} menit` : "nanti";
-        setError(`Sudah ada permintaan baru-baru ini. Coba lagi ${retryText}.`);
-        return;
-      }
-
-      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      const payload = (await response.json().catch(() => ({}))) as { error?: string; ok?: boolean };
 
       if (!response.ok) {
-        setError("Gagal memproses permintaan. Coba lagi nanti.");
+        setError(typeof payload?.error === "string" ? payload.error : "Gagal memproses permintaan. Coba lagi nanti.");
         return;
       }
 
-      setSuccessMessage(payload?.message ?? "Jika email terdaftar, kami kirim tautan reset.");
+      setSuccessMessage("Jika email terdaftar, kami kirim tautan reset.");
       setCooldownEndsAt(null);
     } catch (err) {
       if (typeof window !== "undefined") {

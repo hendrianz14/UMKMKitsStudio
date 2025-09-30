@@ -24,8 +24,23 @@ function getEmailDomain(email: string): string | null {
   return domain ? domain.toLowerCase() : null;
 }
 function requireEnv(keys: string[]) {
-  const miss = keys.filter(k => !process.env[k] || String(process.env[k]).trim() === "");
+  const miss = keys.filter((k) => !process.env[k] || String(process.env[k]).trim() === "");
   return miss;
+}
+
+async function findUserByEmail(admin: ReturnType<typeof supaAdmin>, email: string) {
+  const target = email.toLowerCase();
+  let page = 1;
+  const perPage = 200;
+  for (let i = 0; i < 5; i += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) break;
+    const user = data.users.find((x) => (x.email || "").toLowerCase() === target);
+    if (user) return user;
+    if (data.users.length < perPage) break;
+    page += 1;
+  }
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -35,7 +50,6 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Format email salah." }, { status: 400 });
   }
-  // --- ENV sanity check (sementara untuk debug) ---
   const missing = requireEnv([
     "NEXT_PUBLIC_SUPABASE_URL",
     "SUPABASE_SERVICE_ROLE_KEY",
@@ -72,6 +86,15 @@ export async function POST(request: Request) {
   }
 
   const supabase = supaAdmin();
+
+  const existing = await findUserByEmail(supabase, email);
+  if (existing) {
+    return NextResponse.json(
+      { error: "Email sudah terdaftar. Silakan masuk atau gunakan lupa password." },
+      { status: 409 }
+    );
+  }
+
   const { data: rateRows, error: rateError } = await supabase
     .from("email_otps")
     .select("last_sent_at")

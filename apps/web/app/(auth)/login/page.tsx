@@ -37,13 +37,17 @@ export default function LoginEmailPage() {
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) {
-          const errorMessage =
-            typeof result?.error === "string"
-              ? result.error
-              : response.status === 429
-              ? "Terlalu sering. Coba lagi 1 menit."
-              : "Gagal mengirim kode.";
-          setMessage(errorMessage);
+          if (response.status === 409) {
+            setMessage("Email sudah terdaftar, silakan masuk");
+          } else {
+            const errorMessage =
+              typeof result?.error === "string"
+                ? result.error
+                : response.status === 429
+                ? "Terlalu sering. Coba lagi 1 menit."
+                : "Gagal mengirim kode.";
+            setMessage(errorMessage);
+          }
           setStatus("error");
           if (response.status === 429) {
             setCountdown(60);
