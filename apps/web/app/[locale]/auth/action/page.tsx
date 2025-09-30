@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 import { cn } from "@/lib/utils";
 import {
@@ -30,7 +31,16 @@ export default function AuthActionPage() {
   const searchParams = useSearchParams();
   const { locale } = useParams<{ locale: string }>();
   const router = useRouter();
-  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
+  const supabase = useMemo<SupabaseClient | null>(() => {
+    try {
+      return getSupabaseBrowserClient();
+    } catch (error) {
+      if (typeof window !== "undefined") {
+        console.error("[auth-action] Supabase config error", error);
+      }
+      return null;
+    }
+  }, []);
   const [hashParams, setHashParams] = useState<URLSearchParams | null>(null);
   const [missing, setMissing] = useState<SupabaseEnvKey[]>(collectMissingSupabaseEnvKeys());
   const [verifyStatus, setVerifyStatus] = useState<"idle" | "processing" | "success" | "error">("idle");

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supaBrowser } from "@/lib/supabase-browser";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-export default function AuthCallback() {
+function CallbackInner() {
   const router = useRouter();
   const search = useSearchParams();
   const once = useRef(false);
@@ -14,14 +15,14 @@ export default function AuthCallback() {
     once.current = true;
 
     const run = async () => {
-      const sb = supaBrowser();
+      const sb: SupabaseClient = supaBrowser();
 
-      // 1) Flow PKCE (query param ?code=...) -> tukar code jadi session
+      // PKCE (?code=...)
       const code = search.get("code");
       if (code) {
         try {
-          // Supabase butuh full URL
-          await sb.auth.exchangeCodeForSession(window.location.href);
+          const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
+          if (error) throw error;
           router.replace("/dashboard");
           return;
         } catch (e) {
@@ -31,24 +32,23 @@ export default function AuthCallback() {
         }
       }
 
-      // 2) Flow implicit (hash #access_token=...) -> Supabase otomatis deteksi
-      // Saat halaman ini ter-load dan client dibuat, supabase-js akan membaca hash
-      // dan menyimpan session. Kita tinggal tunggu event SIGNED_IN sebentar.
-      const { data: listener } = sb.auth.onAuthStateChange((event) => {
+      // Implicit (#access_token=...) → supabase-js auto-parse hash
+      const { data: sub } = sb.auth.onAuthStateChange((event) => {
         if (event === "SIGNED_IN") {
-          listener.subscription.unsubscribe();
+          sub.subscription.unsubscribe();
           router.replace("/dashboard");
         } else if (event === "SIGNED_OUT") {
-          listener.subscription.unsubscribe();
+          sub.subscription.unsubscribe();
           router.replace("/login");
         }
       });
 
-      // fallback, kalau event tidak datang (mis. hash sudah diproses),
-      // cek user lalu redirect
+      // Fallback jika event tak muncul
       setTimeout(async () => {
-        const { data: { user } } = await sb.auth.getUser();
-        listener.subscription.unsubscribe();
+        const {
+          data: { user },
+        } = await sb.auth.getUser();
+        sub.subscription.unsubscribe();
         router.replace(user ? "/dashboard" : "/login");
       }, 800);
     };
@@ -62,5 +62,21 @@ export default function AuthCallback() {
         <div className="animate-pulse text-sm opacity-70">Menyambungkan akun…</div>
       </div>
     </div>
+  );
+}
+
+export default function CallbackClientPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-pulse text-sm opacity-70">Membuka…</div>
+          </div>
+        </div>
+      }
+    >
+      <CallbackInner />
+    </Suspense>
   );
 }

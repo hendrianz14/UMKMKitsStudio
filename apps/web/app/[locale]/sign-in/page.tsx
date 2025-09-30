@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { Route } from "next";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { EmailField, PasswordField } from "@/components/auth/AuthFormParts";
 import { Button } from "@/components/ui/button";
@@ -50,16 +49,22 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = useMemo<SupabaseClient | null>(() => supaBrowser(), []);
+  const [configError, setConfigError] = useState(false);
+
+  useEffect(() => {
+    try {
+      supaBrowser();
+    } catch (err) {
+      if (typeof window !== "undefined") {
+        console.error("[sign-in] Supabase config error", err);
+      }
+      setConfigError(true);
+    }
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-
-    if (!supabase) {
-      setError("Konfigurasi Supabase belum lengkap.");
-      return;
-    }
 
     const emailNormalized = email.trim().toLowerCase();
     if (!emailNormalized || !password) {
@@ -69,6 +74,12 @@ export default function SignInPage() {
 
     setLoading(true);
     try {
+      if (configError) {
+        setError("Konfigurasi Supabase belum lengkap.");
+        return;
+      }
+
+      const supabase = supaBrowser();
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: emailNormalized,
         password,
@@ -86,7 +97,12 @@ export default function SignInPage() {
       if (typeof window !== "undefined") {
         console.error("[sign-in] Login error", err);
       }
-      setError("Kredensial tidak valid.");
+      if (err instanceof Error && err.message.includes("[supabase-browser]")) {
+        setConfigError(true);
+        setError("Konfigurasi Supabase belum lengkap.");
+      } else {
+        setError("Kredensial tidak valid.");
+      }
     } finally {
       setLoading(false);
     }
@@ -94,23 +110,19 @@ export default function SignInPage() {
 
   const handleGoogleSignIn = useCallback(async () => {
     setError(null);
-    if (!supabase) {
-      setError("Konfigurasi Supabase belum lengkap.");
-      return;
-    }
     if (googleLoading) return;
 
     setGoogleLoading(true);
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : undefined;
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      if (configError) {
+        setError("Konfigurasi Supabase belum lengkap.");
+        setGoogleLoading(false);
+        return;
+      }
+
+      const { error: oauthError } = await supaBrowser().auth.signInWithOAuth({
         provider: "google",
-        options:
-          origin
-            ? {
-                redirectTo: `${origin}/auth/callback`,
-              }
-            : undefined,
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (oauthError) {
         setError(oauthError.message || "Gagal masuk dengan Google.");
@@ -120,12 +132,17 @@ export default function SignInPage() {
       if (typeof window !== "undefined") {
         console.error("[sign-in] Google login error", err);
       }
-      setError("Gagal masuk dengan Google. Coba lagi nanti.");
+      if (err instanceof Error && err.message.includes("[supabase-browser]")) {
+        setConfigError(true);
+        setError("Konfigurasi Supabase belum lengkap.");
+      } else {
+        setError("Gagal masuk dengan Google. Coba lagi nanti.");
+      }
       setGoogleLoading(false);
     }
-  }, [googleLoading, supabase]);
+  }, [configError, googleLoading]);
 
-  if (!supabase) {
+  if (configError) {
     return (
       <div className="container mx-auto max-w-lg py-16">
         <CardX tone="surface" padding="lg">
