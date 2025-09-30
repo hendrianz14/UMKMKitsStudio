@@ -1,3 +1,4 @@
+// apps/web/app/auth/callback/page.tsx
 "use client";
 
 import { Suspense, useEffect, useRef } from "react";
@@ -5,8 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supaBrowser } from "@/lib/supabase-browser";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const dynamic = "force-dynamic"; // jangan diprerender
 
 function CallbackInner() {
   const router = useRouter();
@@ -20,6 +20,7 @@ function CallbackInner() {
     const run = async () => {
       const sb: SupabaseClient = supaBrowser();
 
+      // PKCE (?code=...)
       const code = search.get("code");
       if (code) {
         const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
@@ -30,6 +31,7 @@ function CallbackInner() {
         }
       }
 
+      // Dapatkan session; bootstrap user baru; redirect
       const {
         data: { session },
       } = await sb.auth.getSession();
@@ -41,9 +43,7 @@ function CallbackInner() {
       await fetch("/api/auth/oauth-bootstrap", {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}` },
-      }).catch(() => {
-        /* ignore */
-      });
+      }).catch(() => {});
 
       router.replace("/dashboard");
     };
