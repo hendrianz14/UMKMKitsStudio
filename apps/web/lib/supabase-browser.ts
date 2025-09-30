@@ -1,34 +1,24 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-let browserClient: SupabaseClient | null = null;
+let _client: SupabaseClient | undefined;
 
-export function supaBrowser(): SupabaseClient | null {
-  if (typeof window === "undefined") {
-    return null;
+export function supaBrowser(): SupabaseClient {
+  if (_client) return _client;
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  if (!url || !anon) {
+    // Fail fast biar ketahuan saat build/deploy
+    throw new Error("[supabase-browser] Missing NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
 
-  if (browserClient) {
-    return browserClient;
-  }
-
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    console.error("[supabase-browser] Missing Supabase env vars in browser context.");
-    return null;
-  }
-
-  browserClient = createClient(url, anonKey, {
+  _client = createClient(url, anon, {
     auth: {
       persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
       storageKey: "umkmkits.supabase.auth",
     },
   });
-
-  return browserClient;
-}
-
-export function resetSupaBrowserClient() {
-  browserClient = null;
+  return _client;
 }
