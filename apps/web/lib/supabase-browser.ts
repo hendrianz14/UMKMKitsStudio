@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-let _client: SupabaseClient | undefined;
+let _client: SupabaseClient | null = null;
 
 export function supaBrowser(): SupabaseClient {
   if (_client) return _client;
@@ -21,4 +21,8 @@ export function supaBrowser(): SupabaseClient {
     },
   });
   return _client;
+}
+
+export function resetSupaBrowserClient(): void {
+  _client = null;
 }
