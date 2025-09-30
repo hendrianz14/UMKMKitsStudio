@@ -1,6 +1,9 @@
-import Image from 'next/image';
-import { CardX } from '@/components/ui/cardx';
-import { templates } from '@/data/templates';
+import Image from "next/image";
+import { redirect } from "next/navigation";
+
+import { CardX } from "@/components/ui/cardx";
+import { templates } from "@/data/templates";
+import { getServerUser } from "@/lib/supabase-server-ssr";
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +13,15 @@ const demoAssets = templates.map((template, index) => ({
   title: template.name
 }));
 
-export default function GalleryPage() {
+export default async function GalleryPage({
+  params,
+}: {
+  params: { locale: string };
+}) {
+  const user = await getServerUser();
+  if (!user) {
+    redirect(`/login?redirect=/${params.locale}/gallery`);
+  }
   return (
     <div className="space-y-8">
       <CardX tone="surface" padding="lg" className="space-y-2">
