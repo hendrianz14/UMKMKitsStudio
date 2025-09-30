@@ -4,7 +4,6 @@ import { Suspense, useEffect } from "react";
 import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supaBrowser } from "@/lib/supabase-browser";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +13,7 @@ function Inner() {
 
   useEffect(() => {
     (async () => {
-      const sb: SupabaseClient = supaBrowser();
+      const sb = supaBrowser();
 
       const code = search.get("code");
       if (code) {

@@ -1,8 +1,12 @@
-import type { Session, SupabaseClient } from "@supabase/supabase-js";
+import type { Session } from "@supabase/supabase-js";
 
-import { resetSupaBrowserClient, supaBrowser } from "@/lib/supabase-browser";
+import {
+  type SupabaseBrowserClient,
+  resetSupaBrowserClient,
+  supaBrowser,
+} from "@/lib/supabase-browser";
 
-export function getSupabaseBrowserClient(): SupabaseClient {
+export function getSupabaseBrowserClient(): SupabaseBrowserClient {
   return supaBrowser();
 }
 
