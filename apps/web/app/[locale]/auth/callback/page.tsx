@@ -1,125 +1,109 @@
-export const dynamic = "force-dynamic";
+"use client";
 
-import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { supaBrowser } from "@/lib/supabase-browser";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Route } from "next";
 
-import { supaServer } from "@/lib/supabase-server-ssr";
-import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
+export const dynamic = "force-dynamic"; // client-only, no prerender
 
-function resolveLocale(raw: string | undefined): Locale {
-  if (raw && isValidLocale(raw)) {
-    return raw as Locale;
+async function waitForSession(sb: SupabaseClient, tries = 10, delay = 150) {
+  for (let i = 0; i < tries; i++) {
+    const {
+      data: { session },
+    } = await sb.auth.getSession();
+    if (session) return session;
+    await new Promise((r) => setTimeout(r, delay));
   }
-  return defaultLocale;
+  return null;
 }
 
-function resolveOrigin() {
-  const headerList = headers();
-  const forwardedHost = headerList.get("x-forwarded-host");
-  const host = forwardedHost ?? headerList.get("host");
-  if (host) {
-    const proto = headerList.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
-    return `${proto}://${host}`;
-  }
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
-  }
-  return "http://localhost:3000";
-}
+function CallbackInner() {
+  const router = useRouter();
+  const params = useParams<{ locale: string }>();
+  const search = useSearchParams();
 
-function extractString(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-  return value;
-}
+  const locale = params?.locale || "id"; // fallback aman
 
-export default async function Page({
-  params,
-  searchParams,
-}: {
-  params: { locale: string };
-  searchParams?: Record<string, string | string[] | undefined>;
-}) {
-  const locale = resolveLocale(params.locale);
-  const nextParam = extractString(searchParams?.next);
-  const fallbackPath = `/${locale}/dashboard`;
-  const redirectTarget = nextParam && nextParam.startsWith("/") ? nextParam : fallbackPath;
+  useEffect(() => {
+    (async () => {
+      const sb: SupabaseClient = supaBrowser();
 
-  const supabase = await supaServer();
-  const {
-    data: { session: initialSession },
-  } = await supabase.auth.getSession();
-
-  let session = initialSession;
-  if (!session) {
-    const code = extractString(searchParams?.code);
-    if (code) {
-      try {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error) {
-          session = data.session;
+      // Biarkan supabase-js auto proses PKCE (?code=...) via detectSessionInUrl
+      let session = await waitForSession(sb);
+      if (!session) {
+        const code = search.get("code");
+        if (code) {
+          try {
+            const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
+            if (!error) {
+              session = (await sb.auth.getSession()).data.session ?? null;
+            }
+          } catch {
+            /* ignore */
+          }
         }
-      } catch (error) {
-        console.error("[auth/callback] Failed to exchange code", error);
       }
-    }
-  }
 
-  if (!session) {
-    redirect(`/${locale}/auth/login?redirect=${encodeURIComponent(redirectTarget)}`);
-  }
+      if (!session) {
+        router.replace((`/${locale}/auth/login`) as Route);
+        return;
+      }
 
-  const origin = resolveOrigin();
-  const cookieStore = await cookies();
-  const rawCookies = cookieStore
-    .getAll()
-    .map(({ name, value }) => `${name}=${value}`)
-    .join("; ");
-  const sessionHeaders: Record<string, string> = { "content-type": "application/json" };
-  if (rawCookies) {
-    sessionHeaders.cookie = rawCookies;
-  }
+      // Sinkronkan cookie sesi untuk SSR
+      try {
+        await fetch("/api/auth/session-sync", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          }),
+        });
+      } catch {}
 
-  try {
-    await fetch(`${origin}/api/auth/session-sync`, {
-      method: "POST",
-      headers: sessionHeaders,
-      body: JSON.stringify({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      }),
-      cache: "no-store",
-    });
-  } catch (error) {
-    console.error("[auth/callback] session-sync failed", error);
-  }
+      // Bootstrap user OAuth (idempotent)
+      try {
+        await fetch("/api/auth/oauth-bootstrap", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+      } catch {}
 
-  try {
-    await supabase.auth.setSession({
-      access_token: session.access_token,
-      refresh_token: session.refresh_token,
-    });
-  } catch (error) {
-    console.error("[auth/callback] Failed to persist session", error);
-  }
+      // Tentukan target redirect
+      const nextRaw = search.get("next");
+      const to: Route =
+        nextRaw && nextRaw.startsWith("/")
+          ? (nextRaw as Route)
+          : ("/" + locale + "/dashboard") as Route;
 
-  try {
-    const bootstrapHeaders: Record<string, string> = { Authorization: `Bearer ${session.access_token}` };
-    if (rawCookies) {
-      bootstrapHeaders.cookie = rawCookies;
-    }
-    await fetch(`${origin}/api/auth/oauth-bootstrap`, {
-      method: "POST",
-      headers: bootstrapHeaders,
-      cache: "no-store",
-    });
-  } catch (error) {
-    console.error("[auth/callback] oauth-bootstrap failed", error);
-  }
+      // Gunakan object href untuk typed routes
+      if (to === ("/" + locale + "/dashboard") as Route) {
+        router.replace((`/${locale}/dashboard`) as Route);
+      } else {
+        router.replace(to);
+      }
+    })();
+  }, [router, search, params, locale]);
 
-  redirect(redirectTarget);
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="animate-pulse text-sm opacity-70">Menyambungkan akun…</div>
+    </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="animate-pulse text-sm opacity-70">Membuka…</div>
+        </div>
+      }
+    >
+      <CallbackInner />
+    </Suspense>
+  );
 }

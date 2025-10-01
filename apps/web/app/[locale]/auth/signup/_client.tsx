@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import type { Route } from "next";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 import {
@@ -18,9 +19,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supaBrowser } from "@/lib/supabase-browser";
 import { isAllowedGmail, isValidEmailFormat, normalizeEmail } from "@/lib/email";
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
-
-type RouterNavigateArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
-type RouterObjectArg = Extract<RouterNavigateArg, { pathname: string }>;
 
 
 const GoogleIcon = () => (
@@ -96,12 +94,12 @@ export default function SignUpPage() {
     }
     return defaultLocale;
   }, [locale]);
-  const dashboardHref = useMemo<RouterObjectArg>(
-    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } } as const),
+  const dashboardHref = useMemo<Route>(
+    () => (`/${resolvedLocale}/dashboard`) as Route,
     [resolvedLocale]
   );
-  const signInHref = useMemo(
-    () => ({ pathname: "/[locale]/auth/login", params: { locale: resolvedLocale } }) as const,
+  const signInHref = useMemo<Route>(
+    () => (`/${resolvedLocale}/auth/login`) as Route,
     [resolvedLocale]
   );
 
@@ -168,7 +166,7 @@ export default function SignUpPage() {
   }, [countdown, email, name, passwordValid, sendingCode]);
 
   const handleSubmit = useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
+    async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       setError(null);
 
