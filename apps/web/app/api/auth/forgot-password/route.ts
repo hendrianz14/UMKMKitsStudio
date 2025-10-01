@@ -4,7 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 
-const Body = z.object({ email: z.string().email() });
+import { defaultLocale, isValidLocale } from "@/lib/i18n";
+
+const Body = z.object({
+  email: z.string().email(),
+  locale: z.string().optional(),
+});
 
 export async function POST(req: NextRequest) {
   const json = await req.json().catch(() => ({}));
@@ -15,7 +20,9 @@ export async function POST(req: NextRequest) {
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const sb = createClient(url, anon);
 
-  const redirectTo = `${process.env.APP_URL}/auth/update-password`;
+  const requestedLocale = p.data.locale;
+  const locale = requestedLocale && isValidLocale(requestedLocale) ? requestedLocale : defaultLocale;
+  const redirectTo = `${process.env.APP_URL}/${locale}/auth/update-password`;
 
   const { error } = await sb.auth.resetPasswordForEmail(p.data.email, { redirectTo });
   if (error) {

@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { supaAdmin } from "@/lib/supabase-server";
 import { isValidEmailFormat, normalizeEmail } from "@/lib/email";
+import { defaultLocale, isValidLocale } from "@/lib/i18n";
 
 const RATE_LIMIT_WINDOW_MS = 1000 * 60 * 60 * 3; // 3 hours
 
@@ -25,9 +26,12 @@ export async function POST(request: Request) {
   const defaultMessage = "Jika email terdaftar, kami kirim tautan reset.";
 
   let emailInput = "";
+  let localeInput: string | undefined;
+
   try {
     const body = await request.json().catch(() => null);
     emailInput = typeof body?.email === "string" ? body.email : "";
+    localeInput = typeof body?.locale === "string" ? body.locale : undefined;
   } catch (error) {
     console.error("[password-reset] Failed to parse body", error);
     return NextResponse.json({ message: defaultMessage });
@@ -37,6 +41,8 @@ export async function POST(request: Request) {
   if (!isValidEmailFormat(normalizedEmail)) {
     return NextResponse.json({ message: defaultMessage });
   }
+
+  const locale = localeInput && isValidLocale(localeInput) ? localeInput : defaultLocale;
 
   let supabase: ReturnType<typeof supaAdmin>;
   try {
@@ -89,7 +95,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const actionUrl = baseUrl ? `${baseUrl.replace(/\/$/, "")}/auth/action` : undefined;
+    const actionUrl = baseUrl
+      ? `${baseUrl.replace(/\/$/, "")}/${locale}/auth/action`
+      : undefined;
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
       redirectTo: actionUrl,
     });

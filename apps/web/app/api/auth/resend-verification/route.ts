@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { supaAdmin } from "@/lib/supabase-server";
 import { isValidEmailFormat, normalizeEmail } from "@/lib/email";
+import { defaultLocale, isValidLocale } from "@/lib/i18n";
 
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -23,10 +24,12 @@ function extractMillis(value: unknown): number | null {
 
 export async function POST(request: Request) {
   let emailInput = "";
+  let localeInput: string | undefined;
 
   try {
     const body = await request.json().catch(() => null);
     emailInput = typeof body?.email === "string" ? body.email : "";
+    localeInput = typeof body?.locale === "string" ? body.locale : undefined;
   } catch (error) {
     console.error("[resend-verification] Failed to parse body", error);
     return NextResponse.json({ message: "Jika email terdaftar, tautan verifikasi dikirim." });
@@ -36,6 +39,8 @@ export async function POST(request: Request) {
   if (!isValidEmailFormat(normalizedEmail)) {
     return NextResponse.json({ message: "Jika email terdaftar, tautan verifikasi dikirim." });
   }
+
+  const locale = localeInput && isValidLocale(localeInput) ? localeInput : defaultLocale;
 
   let supabase: ReturnType<typeof supaAdmin>;
   try {
@@ -80,7 +85,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const actionUrl = baseUrl ? `${baseUrl.replace(/\/$/, "")}/auth/action` : undefined;
+    const actionUrl = baseUrl
+      ? `${baseUrl.replace(/\/$/, "")}/${locale}/auth/action`
+      : undefined;
     const { error: resendError } = await supabase.auth.resend({
       type: "signup",
       email: normalizedEmail,

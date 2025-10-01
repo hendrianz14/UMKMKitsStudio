@@ -1,19 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 
 import { supaBrowser } from "@/lib/supabase-browser";
-import { defaultLocale, type Locale } from "@/lib/i18n";
+import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
 
 type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
 
 export default function UpdatePasswordClient() {
+  const params = useParams<{ locale?: string }>();
   const search = useSearchParams();
   const router = useRouter();
   const once = useRef(false);
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
+
+  const resolvedLocale = useMemo<Locale>(() => {
+    const locale = params?.locale;
+    if (locale && isValidLocale(locale)) {
+      return locale as Locale;
+    }
+    return defaultLocale;
+  }, [params?.locale]);
 
   useEffect(() => {
     if (once.current) return;
@@ -31,8 +40,8 @@ export default function UpdatePasswordClient() {
     setMsg("Berhasil. Mengarahkan...");
     router.replace({
       pathname: "/[locale]/auth/login",
-      params: { locale: defaultLocale as Locale },
-      query: { reset: "ok" }
+      params: { locale: resolvedLocale },
+      query: { reset: "ok" },
     } as unknown as RouterReplaceArg);
   };
 
