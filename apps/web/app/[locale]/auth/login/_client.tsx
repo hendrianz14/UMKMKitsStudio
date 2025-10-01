@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import type { Route } from "next";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 import { EmailField, PasswordField } from "@/components/auth/AuthFormParts";
@@ -12,9 +13,6 @@ import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supaBrowser } from "@/lib/supabase-browser";
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
-
-type RouterNavigateArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
-type RouterObjectArg = Extract<RouterNavigateArg, { pathname: string }>;
 
 const GoogleIcon = () => (
   <svg
@@ -75,20 +73,20 @@ export default function SignInPage() {
     }
     return defaultLocale;
   }, [locale]);
-  const dashboardHref = useMemo<RouterObjectArg>(
-    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } } as const),
+  const dashboardHref = useMemo<Route>(
+    () => (`/${resolvedLocale}/dashboard`) as Route,
     [resolvedLocale]
   );
-  const forgotPasswordHref = useMemo(
-    () => ({ pathname: "/[locale]/forgot-password", params: { locale: resolvedLocale } }) as const,
+  const forgotPasswordHref = useMemo<Route>(
+    () => (`/${resolvedLocale}/forgot-password`) as Route,
     [resolvedLocale]
   );
-  const signUpHref = useMemo(
-    () => ({ pathname: "/[locale]/auth/signup", params: { locale: resolvedLocale } }) as const,
+  const signUpHref = useMemo<Route>(
+    () => (`/${resolvedLocale}/auth/signup`) as Route,
     [resolvedLocale]
   );
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
 
