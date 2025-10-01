@@ -11,12 +11,13 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: { redirect?: string };
+  searchParams: Promise<{ redirect?: string } | undefined>;
 }) {
   const { locale } = await params;
+  const resolvedSearchParams = await searchParams;
   const user = await getServerUser();
   if (user) {
-    const raw = searchParams?.redirect;
+    const raw = resolvedSearchParams?.redirect;
     const fallback = `/${locale}/dashboard`;
     const to: Route = raw && raw.startsWith("/") ? (raw as Route) : (fallback as Route);
     redirect(to);
