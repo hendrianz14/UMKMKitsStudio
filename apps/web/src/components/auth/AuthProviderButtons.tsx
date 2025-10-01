@@ -77,10 +77,11 @@ export function AuthProviderButtons({
           if (typeof window === "undefined") {
             throw new Error("Window tidak tersedia untuk OAuth redirect");
           }
+          const query = window.location.search || "";
           const { error } = await getSupabaseBrowserClient().auth.signInWithOAuth({
             provider: "google",
             options: {
-              redirectTo: `${window.location.origin}/auth/callback`,
+              redirectTo: `${window.location.origin}/auth/callback${query}`,
               queryParams: { prompt: "select_account" },
             },
           });
