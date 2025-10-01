@@ -1,7 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type SupabaseBrowserClient = SupabaseClient;
+export type SupabaseBrowserClient = SupabaseClient<any, any, any>;
 
 let _client: SupabaseBrowserClient | null = null;
 
@@ -35,7 +35,7 @@ export function supaBrowser(): SupabaseBrowserClient {
         }`;
       },
     },
-  });
+  }) as unknown as SupabaseBrowserClient;
 
   return _client;
 }

@@ -2,8 +2,8 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export function supaServer(): SupabaseClient {
-  const c = cookies();
+export function supaServer(): SupabaseClient<any, any, any> {
+  const c = cookies() as any;
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -15,7 +15,7 @@ export function supaServer(): SupabaseClient {
           c.set({ name, value: "", ...options, maxAge: 0 }),
       },
     }
-  );
+  ) as unknown as SupabaseClient<any, any, any>;
 }
 
 export async function getServerUser() {

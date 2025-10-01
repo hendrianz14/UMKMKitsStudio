@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { Route } from "next";
 import { supaBrowser } from "@/lib/supabase-browser";
 import type { SupabaseClient } from "@supabase/supabase-js";
 export const dynamic = "force-dynamic";
@@ -19,21 +20,24 @@ function Inner() {
         const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
         if (error) {
           console.error("PKCE exchange:", error);
-          return router.replace("/login?error=oauth");
+          return router.replace(("/login?error=oauth") as unknown as Route);
         }
       }
 
       const {
         data: { session },
       } = await sb.auth.getSession();
-      if (!session) return router.replace("/login");
+      if (!session) return router.replace("/login" as Route);
 
       await fetch("/api/auth/oauth-bootstrap", {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}` },
       }).catch(() => {});
 
-      router.replace(search.get("redirect") || "/dashboard");
+      const raw = search.get("redirect");
+      const to: Route =
+        raw && raw.startsWith("/") ? (raw as Route) : ("/dashboard" as Route);
+      router.replace(to);
     })();
   }, [router, search]);
 
