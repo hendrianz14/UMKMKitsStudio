@@ -9,11 +9,12 @@ import LoginClient from "./_client";
 export default async function Page({
   searchParams,
 }: {
-  searchParams?: { redirect?: string };
+  searchParams?: Promise<{ redirect?: string }>;
 }) {
   const user = await getServerUser();
   if (user) {
-    const raw = searchParams?.redirect;
+    const resolvedSearchParams = searchParams ? await searchParams : undefined;
+    const raw = resolvedSearchParams?.redirect;
     const to: Route = raw && raw.startsWith("/") ? (raw as Route) : ("/dashboard" as Route);
     redirect(to);
   }

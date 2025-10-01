@@ -10,13 +10,14 @@ export default async function Page({
   params,
   searchParams,
 }: {
-  params: { locale: string };
-  searchParams?: { redirect?: string };
+  params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ redirect?: string }>;
 }) {
-  const { locale } = params;
+  const { locale } = await params;
   const user = await getServerUser();
   if (user) {
-    const raw = searchParams?.redirect;
+    const resolvedSearchParams = searchParams ? await searchParams : undefined;
+    const raw = resolvedSearchParams?.redirect;
     const fallback = `/${locale}/dashboard`;
     const to: Route = raw && raw.startsWith("/") ? (raw as Route) : (fallback as Route);
     redirect(to);

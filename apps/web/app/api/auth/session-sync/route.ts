@@ -15,15 +15,19 @@ export async function POST(req: NextRequest) {
   const p = Body.safeParse(json);
   if (!p.success) return NextResponse.json({ error: "Bad request" }, { status: 400 });
 
-  const c = cookies();
+  const c = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get: (n) => c.get(n)?.value,
-        set: (n, v, o) => c.set({ name: n, value: v, ...o }),
-        remove: (n, o) => c.set({ name: n, value: "", ...o, maxAge: 0 }),
+        getAll: () =>
+          c.getAll().map((cookie) => ({ name: cookie.name, value: cookie.value })),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            c.set({ name, value, ...options });
+          });
+        },
       },
     }
   );
