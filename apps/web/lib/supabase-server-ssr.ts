@@ -3,7 +3,6 @@ import { createServerClient } from "@supabase/ssr";
 import type { CookieMethodsServerDeprecated } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-
 type SupabaseServerClient = SupabaseClient<any, any, any>;
 
 export function supaServer(): SupabaseServerClient {
@@ -18,16 +17,13 @@ export function supaServer(): SupabaseServerClient {
       c.set({ name, value: "", ...options, maxAge: 0 });
     },
   };
-
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-
       cookies: cookieMethods,
     }
   ) as SupabaseServerClient;
-
 }
 
 export async function getServerUser() {
