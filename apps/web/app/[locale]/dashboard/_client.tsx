@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Route } from "next";
-import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { MailCheck } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -14,6 +13,9 @@ import { CardX, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
+import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
+
+type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
 
 interface JobItem {
   id: string;
@@ -43,7 +45,6 @@ const CREDIT_COST: Record<string, number> = {
 export default function DashboardPage() {
   const router = useRouter();
   const { locale } = useParams<{ locale: string }>();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [jobs, setJobs] = useState<JobItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,6 +56,16 @@ export default function DashboardPage() {
   const [dismissedOnboarding, setDismissedOnboarding] = useState(false);
   const [showVerificationNotice, setShowVerificationNotice] = useState(false);
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
+  const resolvedLocale = useMemo<Locale>(() => {
+    if (locale && isValidLocale(locale)) {
+      return locale as Locale;
+    }
+    return defaultLocale;
+  }, [locale]);
+  const dashboardHref = useMemo(
+    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
+    [resolvedLocale]
+  );
 
   const fetchProfile = useCallback(async () => {
     if (!user) {
@@ -157,11 +168,9 @@ export default function DashboardPage() {
     const flag = searchParams?.get("verification");
     if (flag === "check-email") {
       setShowVerificationNotice(true);
-      if (pathname) {
-        router.replace(pathname as Route, { scroll: false });
-      }
+      router.replace(dashboardHref as unknown as RouterReplaceArg, { scroll: false });
     }
-  }, [pathname, router, searchParams]);
+  }, [dashboardHref, router, searchParams]);
 
   const handleOnboardingSave = async (answers: OnboardingAnswers) => {
     if (!user) return;

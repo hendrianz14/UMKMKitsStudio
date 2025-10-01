@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import type { Route } from "next";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -18,7 +17,9 @@ import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supaBrowser } from "@/lib/supabase-browser";
 import { isAllowedGmail, isValidEmailFormat, normalizeEmail } from "@/lib/email";
-import { defaultLocale } from "@/lib/i18n";
+import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
+
+type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
 
 
 const GoogleIcon = () => (
@@ -84,15 +85,24 @@ export default function SignUpPage() {
   }, [countdown]);
 
   const passwordValid = useMemo(() => isPasswordValid(password), [password]);
-  const resolvedLocale = useMemo(() => {
-    if (locale) return locale;
+  const resolvedLocale = useMemo<Locale>(() => {
+    if (locale && isValidLocale(locale)) return locale as Locale;
     if (typeof window !== "undefined") {
       const segment = window.location.pathname.split("/").filter(Boolean)[0];
-      if (segment) return segment;
+      if (segment && isValidLocale(segment)) {
+        return segment as Locale;
+      }
     }
     return defaultLocale;
   }, [locale]);
-  const dashboardPath = useMemo(() => `/${resolvedLocale}/dashboard`, [resolvedLocale]);
+  const dashboardHref = useMemo(
+    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
+    [resolvedLocale]
+  );
+  const signInHref = useMemo(
+    () => ({ pathname: "/[locale]/auth/login", params: { locale: resolvedLocale } }) as const,
+    [resolvedLocale]
+  );
 
   const handleSendCode = useCallback(async () => {
     if (sendingCode || countdown > 0) return;
@@ -244,7 +254,7 @@ export default function SignUpPage() {
           return;
         }
 
-        router.replace(dashboardPath as Route);
+        router.replace(dashboardHref as unknown as RouterReplaceArg);
       } catch (err) {
         if (typeof window !== "undefined") {
           console.error("[sign-up] Register error", err);
@@ -259,7 +269,7 @@ export default function SignUpPage() {
         setLoading(false);
       }
     },
-    [configError, dashboardPath, email, name, otpCode, otpSent, password, passwordValid, router]
+    [configError, dashboardHref, email, name, otpCode, otpSent, password, passwordValid, router]
   );
 
   const handleGoogleSignIn = useCallback(async () => {
@@ -274,7 +284,6 @@ export default function SignUpPage() {
         return;
       }
 
-      const query = typeof window !== "undefined" ? window.location.search : "";
       const nextPath = `/${resolvedLocale}/dashboard`;
       const { error: oauthError } = await supaBrowser().auth.signInWithOAuth({
         provider: "google",
@@ -453,10 +462,7 @@ export default function SignUpPage() {
         <CardXFooter>
           <p className="text-sm text-muted-foreground">
             Sudah punya akun?{" "}
-            <Link
-              href={`/${resolvedLocale}/auth/login`}
-              className="font-medium text-primary hover:text-primary/90"
-            >
+            <Link href={signInHref} className="font-medium text-primary hover:text-primary/90">
               {t("signIn")}
             </Link>
           </p>

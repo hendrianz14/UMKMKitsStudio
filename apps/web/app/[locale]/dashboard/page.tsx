@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
 
-import type { Route } from "next";
-
 import { getServerUser, supaServer } from "@/lib/supabase-server-ssr";
 import DashboardClient from "./_client";
 
@@ -15,7 +13,7 @@ export default async function Page({
   const { locale } = await params;
   const user = await getServerUser();
   if (!user) {
-    redirect(`/${locale}/auth/login?redirect=/${locale}/dashboard`);
+    redirect(`/${locale}/auth/login?redirect=/${locale}/dashboard` as unknown as import("next").Route);
   }
 
   const supabase = await supaServer();
@@ -47,7 +45,7 @@ export default async function Page({
   );
 
   if (!completed) {
-    redirect(`/${locale}/onboarding` as Route);
+    redirect(`/${locale}/onboarding` as unknown as import("next").Route);
   }
 
   return <DashboardClient />;

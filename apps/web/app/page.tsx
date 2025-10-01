@@ -15,10 +15,12 @@ const HeroInteractiveImage = dynamic(
 );
 import { SectionHeading } from '@/components/SectionHeading';
 import { Button } from '@/components/ui/button';
-import { defaultLocale } from '@/lib/i18n';
+import { defaultLocale, type Locale } from '@/lib/i18n';
 
 export default function MarketingPage() {
-  const locale = defaultLocale;
+  const locale: Locale = defaultLocale;
+  const signUpHref = { pathname: '/[locale]/auth/signup', params: { locale } } as const;
+  const editorHref = { pathname: '/[locale]/editor', params: { locale } } as const;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-white">
@@ -45,7 +47,7 @@ export default function MarketingPage() {
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
                   <Button size="lg" asChild>
-                    <Link href={`/${locale}/auth/signup`}>Coba Gratis Sekarang</Link>
+                    <Link href={signUpHref}>Coba Gratis Sekarang</Link>
                   </Button>
                   <Button size="lg" variant="secondary" asChild>
                     <Link href="#editor-demo">
@@ -109,7 +111,7 @@ export default function MarketingPage() {
                   Coba demo editor langsung di browser Anda. Gunakan preset kanvas, filter, dan AI caption yang sama seperti versi produksi.
                 </p>
                 <Button asChild>
-                  <Link href={`/${locale}/editor`}>Buka Editor</Link>
+                  <Link href={editorHref}>Buka Editor</Link>
                 </Button>
               </div>
               <div className="flex-1 rounded-2xl border border-white/10 bg-black/40 p-6 text-sm text-[var(--text-muted)]">

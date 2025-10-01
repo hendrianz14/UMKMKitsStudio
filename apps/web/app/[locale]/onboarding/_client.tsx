@@ -2,15 +2,16 @@
 
 export const dynamic = 'force-dynamic';
 
-import type { Route } from 'next';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardX } from '@/components/ui/cardx';
 import { Input } from '@/components/ui/input';
 import { CreditBadge } from '@/components/credit-badge';
-import { defaultLocale } from '@/lib/i18n';
+import { defaultLocale, isValidLocale, type Locale } from '@/lib/i18n';
+
+type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -19,7 +20,16 @@ export default function OnboardingPage() {
   const [language, setLanguage] = useState<'id' | 'en'>('id');
   const [business, setBusiness] = useState('');
   const [saving, setSaving] = useState(false);
-  const resolvedLocale = locale ?? defaultLocale;
+  const resolvedLocale = useMemo<Locale>(() => {
+    if (locale && isValidLocale(locale)) {
+      return locale as Locale;
+    }
+    return defaultLocale;
+  }, [locale]);
+  const dashboardHref = useMemo(
+    () => ({ pathname: '/[locale]/dashboard', params: { locale: resolvedLocale } }) as const,
+    [resolvedLocale]
+  );
 
   const handleComplete = useCallback(async () => {
     if (saving) return;
@@ -29,12 +39,12 @@ export default function OnboardingPage() {
       if (!response.ok) {
         throw new Error('Failed to complete onboarding');
       }
-      router.replace(`/${resolvedLocale}/dashboard` as Route);
+      router.replace(dashboardHref as unknown as RouterReplaceArg);
     } catch (error) {
       console.error('[onboarding] Failed to complete onboarding', error);
       setSaving(false);
     }
-  }, [resolvedLocale, router, saving]);
+  }, [dashboardHref, router, saving]);
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">

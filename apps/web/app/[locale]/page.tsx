@@ -9,9 +9,13 @@ import {
 } from '@/components/no-ssr';
 import { SectionHeading } from '@/components/SectionHeading';
 import { Button } from '@/components/ui/button';
+import { defaultLocale, isValidLocale, type Locale } from '@/lib/i18n';
 
 export default async function LocaleLanding({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
+  const { locale: rawLocale } = await params;
+  const locale: Locale = isValidLocale(rawLocale) ? (rawLocale as Locale) : defaultLocale;
+  const signUpHref = { pathname: '/[locale]/auth/signup', params: { locale } } as const;
+  const editorHref = { pathname: '/[locale]/editor', params: { locale } } as const;
   const t = await getTranslations({ locale, namespace: 'common' });
 
   return (
@@ -30,10 +34,10 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
               <p className="max-w-xl text-lg text-[var(--text-muted)]">{t('heroSubtitle')}</p>
               <div className="flex flex-wrap items-center gap-4">
                 <Button size="lg" asChild>
-                  <Link href={`/${locale}/auth/signup`}>{t('cta')}</Link>
+                  <Link href={signUpHref}>{t('cta')}</Link>
                 </Button>
                 <Button size="lg" variant="secondary" asChild>
-                  <Link href={`/${locale}/editor`}>
+                  <Link href={editorHref}>
                     {locale === 'id' ? 'Buka Editor' : 'Open Editor'}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>

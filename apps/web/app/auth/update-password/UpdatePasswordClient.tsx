@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { Route } from "next";
 
 import { supaBrowser } from "@/lib/supabase-browser";
-import { defaultLocale } from "@/lib/i18n";
+import { defaultLocale, type Locale } from "@/lib/i18n";
+
+type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
 
 export default function UpdatePasswordClient() {
   const search = useSearchParams();
@@ -28,7 +29,11 @@ export default function UpdatePasswordClient() {
       return;
     }
     setMsg("Berhasil. Mengarahkan...");
-    router.replace(`/${defaultLocale}/auth/login?reset=ok` as Route);
+    router.replace({
+      pathname: "/[locale]/auth/login",
+      params: { locale: defaultLocale as Locale },
+      query: { reset: "ok" }
+    } as unknown as RouterReplaceArg);
   };
 
   return (

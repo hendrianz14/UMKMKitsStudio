@@ -5,7 +5,6 @@ import { useParams, usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Menu, Sparkles } from "lucide-react";
 import { motion, useScroll } from "framer-motion";
-import type { Route } from "next";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LangToggle } from "@/components/lang-toggle";
@@ -26,12 +25,13 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
   const params = useParams<{ locale?: string }>();
   const pathname = usePathname();
 
-  const localeFromParams = params?.locale && isValidLocale(params.locale) ? params.locale : undefined;
-  const fallbackLocale = localeFromParams ?? locale ?? defaultLocale;
-  const resolvedLocale = fallbackLocale;
-  const base: `/${Locale}` | "" = localeFromParams ? `/${localeFromParams}` : "";
-  const basePathString = base || "/";
-  const basePath = basePathString as Route;
+  const localeFromParams = params?.locale && isValidLocale(params.locale) ? (params.locale as Locale) : undefined;
+  const fallbackLocale = locale ?? defaultLocale;
+  const resolvedLocale = localeFromParams ?? fallbackLocale;
+  const basePathString = localeFromParams ? `/${localeFromParams}` : "/";
+  const baseHref = localeFromParams
+    ? ({ pathname: "/[locale]", params: { locale: localeFromParams } }) as const
+    : "/";
   const showMarketing = showSections ?? (pathname === "/" || pathname === basePathString);
   const [active, setActive] = useState("home");
 
@@ -64,16 +64,19 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
   }, [showMarketing]);
 
   const navItems = useMemo(() => (showMarketing ? NAV_SECTIONS : []), [showMarketing]);
-  const dashboardPath = (base
-    ? (`${base}/dashboard` as Route)
-    : (`/${fallbackLocale}/dashboard` as Route));
-  const brandHref = pathname?.startsWith(dashboardPath) ? (pathname as Route) : basePath;
-  const marketingHref = useMemo(
-    () =>
-      (id: (typeof NAV_SECTIONS)[number]["id"]) =>
-        `${base || ""}/#${id}` as Route,
-    [base]
+  const dashboardPathname = `/${resolvedLocale}/dashboard`;
+  const dashboardHref = useMemo(
+    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
+    [resolvedLocale]
   );
+  const brandHref = pathname?.startsWith(dashboardPathname) ? dashboardHref : baseHref;
+  const marketingHref = useMemo(() => {
+    if (localeFromParams) {
+      return (id: (typeof NAV_SECTIONS)[number]["id"]) =>
+        ({ pathname: "/[locale]", params: { locale: localeFromParams }, hash: id }) as const;
+    }
+    return (id: (typeof NAV_SECTIONS)[number]["id"]) => ({ pathname: "/", hash: id }) as const;
+  }, [localeFromParams]);
 
   return (
     <motion.header

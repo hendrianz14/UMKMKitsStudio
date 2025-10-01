@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, LockKeyhole } from "lucide-react";
 
 import { EmailField } from "@/components/auth/AuthFormParts";
@@ -15,9 +15,20 @@ import {
   fetchMissingSupabaseEnvKeys,
   type SupabaseEnvKey,
 } from "@/lib/supabase-env-check";
+import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
 
 export default function ForgotPasswordPage() {
   const { locale } = useParams<{ locale: string }>();
+  const resolvedLocale = useMemo<Locale>(() => {
+    if (locale && isValidLocale(locale)) {
+      return locale as Locale;
+    }
+    return defaultLocale;
+  }, [locale]);
+  const loginHref = useMemo(
+    () => ({ pathname: "/[locale]/auth/login", params: { locale: resolvedLocale } }) as const,
+    [resolvedLocale]
+  );
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -180,10 +191,7 @@ export default function ForgotPasswordPage() {
           </p>
         </form>
         <CardXFooter>
-          <Link
-            href={`/${locale}/auth/login`}
-            className="text-sm font-medium text-primary hover:text-primary/90"
-          >
+          <Link href={loginHref} className="text-sm font-medium text-primary hover:text-primary/90">
             Kembali ke halaman masuk
           </Link>
         </CardXFooter>

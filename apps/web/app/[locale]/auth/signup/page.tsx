@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import type { Route } from "next";
 
 import { getServerUser } from "@/lib/supabase-server-ssr";
 import SignUpClient from "./_client";
@@ -19,8 +18,8 @@ export default async function Page({
     const resolvedSearchParams = searchParams ? await searchParams : undefined;
     const raw = resolvedSearchParams?.redirect;
     const fallback = `/${locale}/dashboard`;
-    const to: Route = raw && raw.startsWith("/") ? (raw as Route) : (fallback as Route);
-    redirect(to);
+    const to = raw && raw.startsWith("/") ? raw : fallback;
+    redirect(to as unknown as import("next").Route);
   }
   return <SignUpClient />;
 }

@@ -1,28 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import type { Route } from "next";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { defaultLocale, isValidLocale } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
-
-const DASHBOARD_ROUTES = {
-  id: "/id/dashboard",
-  en: "/en/dashboard",
-} satisfies Record<Locale, `/${Locale}/dashboard`>;
-
-const SIGN_IN_ROUTES = {
-  id: "/id/auth/login",
-  en: "/en/auth/login",
-} satisfies Record<Locale, `/${Locale}/auth/login`>;
-
-const SIGN_UP_ROUTES = {
-  id: "/id/auth/signup",
-  en: "/en/auth/signup",
-} satisfies Record<Locale, `/${Locale}/auth/signup`>;
 
 const AUTH_ROUTE_SEGMENTS = [
   "/auth/login",
@@ -52,15 +36,29 @@ export default function AuthNav({
   const pathname = usePathname();
   const activeLocale = locale && isValidLocale(locale) ? (locale as Locale) : fallbackLocale;
   const fallback = defaultLocale;
-  const dashboardHref = activeLocale
-    ? DASHBOARD_ROUTES[activeLocale]
-    : (`/${fallback}/dashboard` as Route);
-  const signInHref = activeLocale
-    ? SIGN_IN_ROUTES[activeLocale]
-    : (`/${fallback}/auth/login` as Route);
-  const signUpHref = activeLocale
-    ? SIGN_UP_ROUTES[activeLocale]
-    : (`/${fallback}/auth/signup` as Route);
+  const finalLocale: Locale = activeLocale ?? fallback;
+  const dashboardHref = useMemo(
+    () => ({
+      pathname: "/[locale]/dashboard",
+      params: { locale: finalLocale }
+    }) as const,
+    [finalLocale]
+  );
+  const signInHref = useMemo(
+    () => ({
+      pathname: "/[locale]/auth/login",
+      params: { locale: finalLocale }
+    }) as const,
+    [finalLocale]
+  );
+  const signUpHref = useMemo(
+    () => ({
+      pathname: "/[locale]/auth/signup",
+      params: { locale: finalLocale }
+    }) as const,
+    [finalLocale]
+  );
+  const dashboardPathname = `/${finalLocale}/dashboard`;
 
   useEffect(() => {
     let cancelled = false;
@@ -116,7 +114,7 @@ export default function AuthNav({
     <div className={cn(containerClasses, className)}>
       {isLoggedIn ? (
         <>
-          {pathname !== dashboardHref && (
+          {pathname !== dashboardPathname && (
             <Link
               href={dashboardHref}
               className={cn(actionBaseClass, "bg-card/30 border border-border hover:bg-card/50")}
