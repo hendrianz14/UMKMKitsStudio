@@ -1,7 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type SupabaseBrowserClient = SupabaseClient<any, "public", "public", any, any>;
+export type SupabaseBrowserClient = SupabaseClient<any, any, any>;
 
 let _client: SupabaseBrowserClient | null = null;
 
@@ -13,24 +13,28 @@ export function supaBrowser(): SupabaseBrowserClient {
   if (!url || !anon) throw new Error("[supabase-browser] Missing NEXT_PUBLIC_SUPABASE_*");
 
   _client = createBrowserClient(url, anon, {
+    auth: {
+      flowType: "pkce",
+      persistSession: true,
+      detectSessionInUrl: true,
+      autoRefreshToken: true,
+    },
     cookies: {
-      get(name) {
-        return document.cookie
+      get: (name) =>
+        document.cookie
           .split("; ")
-          .find((value) => value.startsWith(`${name}=`))?.split("=")[1];
-      },
-      set(name, value, options) {
-        document.cookie = `${name}=${value}; Path=/; Max-Age=${options?.maxAge ?? 60 * 60 * 24 * 365}; SameSite=${options?.sameSite ?? "Lax"}; ${
+          .find((value) => value.startsWith(`${name}=`))?.split("=")[1],
+      set: (name, value, options) => {
+        document.cookie = `${name}=${value}; Path=/; Max-Age=${options?.maxAge ?? 31536000}; SameSite=${options?.sameSite ?? "Lax"}; ${
           location.protocol === "https:" ? "Secure" : ""
         }`;
       },
-      remove(name, options) {
+      remove: (name, options) => {
         document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=${options?.sameSite ?? "Lax"}; ${
           location.protocol === "https:" ? "Secure" : ""
         }`;
       },
     },
-    auth: { persistSession: true, detectSessionInUrl: true, autoRefreshToken: true },
   }) as unknown as SupabaseBrowserClient;
 
   return _client;
