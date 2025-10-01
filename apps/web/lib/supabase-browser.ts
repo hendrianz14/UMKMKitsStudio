@@ -18,6 +18,7 @@ export function supaBrowser(): SupabaseBrowserClient {
       persistSession: true,
       detectSessionInUrl: true,
       autoRefreshToken: true,
+
     },
   }) as unknown as SupabaseBrowserClient;
 
