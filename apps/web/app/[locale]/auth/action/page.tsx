@@ -20,6 +20,7 @@ import {
   fetchMissingSupabaseEnvKeys,
   type SupabaseEnvKey,
 } from "@/lib/supabase-env-check";
+import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
 
 interface ResetState {
   email: string | null;
@@ -50,7 +51,20 @@ export default function AuthActionPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const envReady = missing.length === 0;
-
+  const resolvedLocale = useMemo<Locale>(() => {
+    if (locale && isValidLocale(locale)) {
+      return locale as Locale;
+    }
+    return defaultLocale;
+  }, [locale]);
+  const loginHref = useMemo(
+    () => ({ pathname: "/[locale]/auth/login", params: { locale: resolvedLocale } }) as const,
+    [resolvedLocale]
+  );
+  const dashboardHref = useMemo(
+    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
+    [resolvedLocale]
+  );
   useEffect(() => {
     if (typeof window === "undefined") return;
     setHashParams(new URLSearchParams(window.location.hash.replace(/^#/, "")));
@@ -224,7 +238,7 @@ export default function AuthActionPage() {
         <CardX tone="surface" padding="lg" className="space-y-4">
           <CardXHeader title="Tautan tidak valid" subtitle="Parameter yang dibutuhkan tidak ditemukan." />
           <CardXFooter>
-            <Link href={`/${locale}/auth/login`} className="text-sm font-medium text-primary hover:text-primary/90">
+            <Link href={loginHref} className="text-sm font-medium text-primary hover:text-primary/90">
               Kembali ke halaman masuk
             </Link>
           </CardXFooter>
@@ -294,15 +308,13 @@ export default function AuthActionPage() {
                   window.location.href = continueUrl;
                   return;
                 }
-                if (locale) {
-                  router.replace(`/${locale}/dashboard`);
-                }
+                router.replace(dashboardHref as unknown as Parameters<typeof router.replace>[0]);
               }}
             >
               Ke Dashboard
             </Button>
             <Button type="button" variant="outline" className="text-white" asChild>
-              <Link href={`/${locale}/auth/login`}>Masuk</Link>
+              <Link href={loginHref}>Masuk</Link>
             </Button>
           </div>
         </CardX>
@@ -402,7 +414,7 @@ export default function AuthActionPage() {
                 <span>Password berhasil diperbarui.</span>
               </div>
               <Button asChild className="btn-primary text-white w-full">
-                <Link href={`/${locale}/auth/login`}>Masuk</Link>
+                <Link href={loginHref}>Masuk</Link>
               </Button>
             </div>
           ) : null}
@@ -416,7 +428,7 @@ export default function AuthActionPage() {
       <CardX tone="surface" padding="lg" className="space-y-4">
         <CardXHeader title="Tindakan tidak dikenal" subtitle="Mode tindakan tidak dikenali." />
         <CardXFooter>
-          <Link href={`/${locale}/auth/login`} className="text-sm font-medium text-primary hover:text-primary/90">
+          <Link href={loginHref} className="text-sm font-medium text-primary hover:text-primary/90">
             Kembali ke halaman masuk
           </Link>
         </CardXFooter>

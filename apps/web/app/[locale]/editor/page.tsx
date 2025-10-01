@@ -11,7 +11,7 @@ export default async function Page({
   const { locale } = await params;
   const user = await getServerUser();
   if (!user) {
-    redirect(`/${locale}/auth/login?redirect=/${locale}/editor`);
+    redirect(`/${locale}/auth/login?redirect=/${locale}/editor` as unknown as import("next").Route);
   }
   return <EditorClient />;
 }

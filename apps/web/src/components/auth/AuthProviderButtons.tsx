@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
-import { defaultLocale } from "@/lib/i18n";
+import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
 
 interface AuthProviderButtonsProps {
   className?: string;
@@ -69,12 +69,15 @@ export function AuthProviderButtons({
       icon: ReactNode;
     }> = [];
 
-    const resolveLocale = () => {
+    const resolveLocale = (): Locale => {
       if (typeof window === "undefined") {
         return defaultLocale;
       }
       const segment = window.location.pathname.split("/").filter(Boolean)[0];
-      return segment || defaultLocale;
+      if (segment && isValidLocale(segment)) {
+        return segment as Locale;
+      }
+      return defaultLocale;
     };
 
     if (getGoogleEnabledFlag()) {
