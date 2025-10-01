@@ -6,7 +6,7 @@ import type { Route } from "next";
 import { supaBrowser } from "@/lib/supabase-browser";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Route } from "next";
+import type { Route as NextRoute } from "next";
 
 
 export const dynamic = "force-dynamic";
@@ -22,14 +22,15 @@ function Inner() {
       const code = search.get("code");
       if (code) {
 
-        if (error) return router.replace("/login?error=oauth" as Route);
+        const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
+        if (error) return router.replace("/login?error=oauth" as unknown as NextRoute);
 
       }
 
       const {
         data: { session },
-      } = await sb.auth.getSession();
-      if (!session) return router.replace("/login" as Route);
+
+      if (!session) return router.replace("/login" as NextRoute);
 
       try {
         await fetch("/api/auth/session-sync", {
@@ -42,7 +43,6 @@ function Inner() {
         });
       } catch {}
 
-
       try {
         await fetch("/api/auth/oauth-bootstrap", {
           method: "POST",
@@ -51,7 +51,8 @@ function Inner() {
       } catch {}
 
       const raw = search.get("redirect");
-      const to: Route = raw && raw.startsWith("/") ? (raw as Route) : ("/dashboard" as Route);
+      const to: NextRoute =
+        raw && raw.startsWith("/") ? (raw as NextRoute) : ("/dashboard" as NextRoute);
 
       router.replace(to);
     })();
