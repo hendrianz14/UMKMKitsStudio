@@ -9,17 +9,16 @@ export default async function Page({
   params,
   searchParams,
 }: {
-  params: Promise<{ locale: string }>;
-  searchParams?: Promise<{ redirect?: string }>;
+  params: { locale: string };
+  searchParams?: { redirect?: string };
 }) {
-  const { locale } = await params;
+  const { locale } = params;
   const user = await getServerUser();
   if (user) {
-    const resolvedSearchParams = searchParams ? await searchParams : undefined;
-    const raw = resolvedSearchParams?.redirect;
+    const raw = searchParams?.redirect;
     const fallback = `/${locale}/dashboard`;
     const to = raw && raw.startsWith("/") ? raw : fallback;
-    redirect(to as unknown as import("next").Route);
+    redirect(to);
   }
   return <SignInClient />;
 }

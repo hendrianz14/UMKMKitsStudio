@@ -1,136 +1,125 @@
-"use client";
-
-import { Suspense, useEffect, useMemo } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import type { SupabaseClient } from "@supabase/supabase-js";
-
-import { supaBrowser } from "@/lib/supabase-browser";
-import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
-
-type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
-
 export const dynamic = "force-dynamic";
 
-async function waitForSession(sb: SupabaseClient, tries = 8, delay = 150) {
-  for (let i = 0; i < tries; i++) {
-    const {
-      data: { session },
-    } = await sb.auth.getSession();
-    if (session) return session;
-    await new Promise((resolve) => setTimeout(resolve, delay));
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { supaServer } from "@/lib/supabase-server-ssr";
+import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
+
+function resolveLocale(raw: string | undefined): Locale {
+  if (raw && isValidLocale(raw)) {
+    return raw as Locale;
   }
-  return null;
+  return defaultLocale;
 }
 
-function Inner() {
-  const router = useRouter();
-  const search = useSearchParams();
-  const params = useParams<{ locale?: string }>();
-  const locale = params?.locale;
-  const resolvedLocale = useMemo<Locale>(() => {
-    if (locale && isValidLocale(locale)) {
-      return locale as Locale;
+function resolveOrigin() {
+  const headerList = headers();
+  const forwardedHost = headerList.get("x-forwarded-host");
+  const host = forwardedHost ?? headerList.get("host");
+  if (host) {
+    const proto = headerList.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+    return `${proto}://${host}`;
+  }
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
+  }
+  return "http://localhost:3000";
+}
+
+function extractString(value: string | string[] | undefined) {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return value;
+}
+
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: { locale: string };
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
+  const locale = resolveLocale(params.locale);
+  const nextParam = extractString(searchParams?.next);
+  const fallbackPath = `/${locale}/dashboard`;
+  const redirectTarget = nextParam && nextParam.startsWith("/") ? nextParam : fallbackPath;
+
+  const supabase = await supaServer();
+  const {
+    data: { session: initialSession },
+  } = await supabase.auth.getSession();
+
+  let session = initialSession;
+  if (!session) {
+    const code = extractString(searchParams?.code);
+    if (code) {
+      try {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error) {
+          session = data.session;
+        }
+      } catch (error) {
+        console.error("[auth/callback] Failed to exchange code", error);
+      }
     }
-    return defaultLocale;
-  }, [locale]);
-  const signInHref = useMemo(
-    () => ({ pathname: "/[locale]/auth/login", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
-  const dashboardHref = useMemo(
-    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
+  }
 
-  useEffect(() => {
-    void (async () => {
-      const sb = supaBrowser();
+  if (!session) {
+    redirect(`/${locale}/auth/login?redirect=${encodeURIComponent(redirectTarget)}`);
+  }
 
-      let session = await waitForSession(sb);
-      if (!session) {
-        const code = search.get("code");
-        if (code) {
-          try {
-            const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
-            if (!error) {
-              session = (await sb.auth.getSession()).data.session ?? null;
-            }
-          } catch {}
-        }
-      }
+  const origin = resolveOrigin();
+  const cookieStore = await cookies();
+  const rawCookies = cookieStore
+    .getAll()
+    .map(({ name, value }) => `${name}=${value}`)
+    .join("; ");
+  const sessionHeaders: Record<string, string> = { "content-type": "application/json" };
+  if (rawCookies) {
+    sessionHeaders.cookie = rawCookies;
+  }
 
-      if (!session) {
-        router.replace(signInHref as unknown as RouterReplaceArg);
-        return;
-      }
+  try {
+    await fetch(`${origin}/api/auth/session-sync`, {
+      method: "POST",
+      headers: sessionHeaders,
+      body: JSON.stringify({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      }),
+      cache: "no-store",
+    });
+  } catch (error) {
+    console.error("[auth/callback] session-sync failed", error);
+  }
 
-      try {
-        await fetch("/api/auth/session-sync", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-          }),
-        });
-      } catch {}
+  try {
+    await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+  } catch (error) {
+    console.error("[auth/callback] Failed to persist session", error);
+  }
 
-      try {
-        await fetch("/api/auth/oauth-bootstrap", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-      } catch {}
+  try {
+    const bootstrapHeaders: Record<string, string> = { Authorization: `Bearer ${session.access_token}` };
+    if (rawCookies) {
+      bootstrapHeaders.cookie = rawCookies;
+    }
+    await fetch(`${origin}/api/auth/oauth-bootstrap`, {
+      method: "POST",
+      headers: bootstrapHeaders,
+      cache: "no-store",
+    });
+  } catch (error) {
+    console.error("[auth/callback] oauth-bootstrap failed", error);
+  }
 
-      const nextParam = search.get("next");
-      const fallback = `/${resolvedLocale}/dashboard`;
-      const to = nextParam && nextParam.startsWith("/") ? nextParam : fallback;
-      if (to === fallback) {
-        router.replace(dashboardHref as unknown as RouterReplaceArg);
-        return;
-      }
-
-      try {
-        const url = new URL(to, window.location.origin);
-        const [localeSegment, ...rest] = url.pathname.split("/").filter(Boolean);
-        if (localeSegment && isValidLocale(localeSegment)) {
-          const targetLocale = localeSegment as Locale;
-          if (rest.length === 1 && rest[0] === "dashboard") {
-            router.replace(
-              { pathname: "/[locale]/dashboard", params: { locale: targetLocale } } as unknown as RouterReplaceArg
-            );
-            return;
-          }
-          if (rest.length === 1 && rest[0] === "onboarding") {
-            router.replace(
-              { pathname: "/[locale]/onboarding", params: { locale: targetLocale } } as unknown as RouterReplaceArg
-            );
-            return;
-          }
-        }
-      } catch {}
-
-      router.replace(dashboardHref as unknown as RouterReplaceArg);
-    })();
-  }, [dashboardHref, resolvedLocale, router, search, signInHref]);
-
-  return (
-    <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="animate-pulse text-sm opacity-70">Menyambungkan akun…</div>
-    </div>
-  );
-}
-
-export default function Page() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="animate-pulse text-sm opacity-70">Membuka…</div>
-        </div>
-      }
-    >
-      <Inner />
-    </Suspense>
-  );
+  redirect(redirectTarget);
 }
