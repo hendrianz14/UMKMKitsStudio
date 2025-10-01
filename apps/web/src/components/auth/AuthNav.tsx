@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { useEffect, useState } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { isValidLocale } from "@/lib/i18n";
+import { defaultLocale, isValidLocale } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 
@@ -14,18 +15,18 @@ const DASHBOARD_ROUTES = {
 } satisfies Record<Locale, `/${Locale}/dashboard`>;
 
 const SIGN_IN_ROUTES = {
-  id: "/id/sign-in",
-  en: "/en/sign-in",
-} satisfies Record<Locale, `/${Locale}/sign-in`>;
+  id: "/id/auth/login",
+  en: "/en/auth/login",
+} satisfies Record<Locale, `/${Locale}/auth/login`>;
 
 const SIGN_UP_ROUTES = {
-  id: "/id/sign-up",
-  en: "/en/sign-up",
-} satisfies Record<Locale, `/${Locale}/sign-up`>;
+  id: "/id/auth/signup",
+  en: "/en/auth/signup",
+} satisfies Record<Locale, `/${Locale}/auth/signup`>;
 
 const AUTH_ROUTE_SEGMENTS = [
-  "/sign-in",
-  "/sign-up",
+  "/auth/login",
+  "/auth/signup",
   "/forgot-password",
   "/auth/action",
 ] as const;
@@ -50,9 +51,16 @@ export default function AuthNav({
   const { locale } = (useParams<{ locale?: string }>() ?? {}) as { locale?: string };
   const pathname = usePathname();
   const activeLocale = locale && isValidLocale(locale) ? (locale as Locale) : fallbackLocale;
-  const dashboardHref = activeLocale ? DASHBOARD_ROUTES[activeLocale] : "/dashboard";
-  const signInHref = activeLocale ? SIGN_IN_ROUTES[activeLocale] : "/sign-in";
-  const signUpHref = activeLocale ? SIGN_UP_ROUTES[activeLocale] : "/sign-up";
+  const fallback = defaultLocale;
+  const dashboardHref = activeLocale
+    ? DASHBOARD_ROUTES[activeLocale]
+    : (`/${fallback}/dashboard` as Route);
+  const signInHref = activeLocale
+    ? SIGN_IN_ROUTES[activeLocale]
+    : (`/${fallback}/auth/login` as Route);
+  const signUpHref = activeLocale
+    ? SIGN_UP_ROUTES[activeLocale]
+    : (`/${fallback}/auth/signup` as Route);
 
   useEffect(() => {
     let cancelled = false;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { Route } from "next";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 import { EmailField, PasswordField } from "@/components/auth/AuthFormParts";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supaBrowser } from "@/lib/supabase-browser";
+import { defaultLocale } from "@/lib/i18n";
 
 const GoogleIcon = () => (
   <svg
@@ -62,6 +63,15 @@ export default function SignInPage() {
     }
   }, []);
 
+  const resolvedLocale = useMemo(() => {
+    if (locale) return locale;
+    if (typeof window !== "undefined") {
+      const segment = window.location.pathname.split("/").filter(Boolean)[0];
+      if (segment) return segment;
+    }
+    return defaultLocale;
+  }, [locale]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
@@ -88,11 +98,7 @@ export default function SignInPage() {
         setError(signInError.message || "Kredensial tidak valid.");
         return;
       }
-      if (locale) {
-        router.replace(`/${locale}/dashboard` as Route);
-      } else {
-        router.replace("/dashboard");
-      }
+      router.replace(`/${resolvedLocale}/dashboard` as Route);
     } catch (err) {
       if (typeof window !== "undefined") {
         console.error("[sign-in] Login error", err);
@@ -121,9 +127,14 @@ export default function SignInPage() {
       }
 
       const query = typeof window !== "undefined" ? window.location.search : "";
+      const nextPath = `/${resolvedLocale}/dashboard`;
       const { error: oauthError } = await supaBrowser().auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback${query}` },
+        options: {
+          redirectTo: `${window.location.origin}/${resolvedLocale}/auth/callback?next=${encodeURIComponent(
+            nextPath
+          )}`,
+        },
       });
       if (oauthError) {
         setError(oauthError.message || "Gagal masuk dengan Google.");
@@ -141,7 +152,7 @@ export default function SignInPage() {
       }
       setGoogleLoading(false);
     }
-  }, [configError, googleLoading]);
+  }, [configError, googleLoading, resolvedLocale]);
 
   if (configError) {
     return (
@@ -219,7 +230,7 @@ export default function SignInPage() {
           />
           <div className="flex items-center justify-between text-sm">
             <Link
-              href={`/${locale}/forgot-password`}
+              href={`/${resolvedLocale}/forgot-password`}
               className="font-medium text-primary hover:text-primary/90"
             >
               Lupa password?
@@ -248,7 +259,10 @@ export default function SignInPage() {
         <CardXFooter>
           <p className="text-sm text-muted-foreground">
             Belum punya akun?{" "}
-            <Link href={`/${locale}/sign-up`} className="font-medium text-primary hover:text-primary/90">
+            <Link
+              href={`/${resolvedLocale}/auth/signup`}
+              className="font-medium text-primary hover:text-primary/90"
+            >
               {t("signUp")}
             </Link>
           </p>

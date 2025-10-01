@@ -123,18 +123,6 @@ export default function DashboardPage() {
     void fetchProfile();
   }, [fetchProfile]);
 
-  useEffect(() => {
-    if (!user) return;
-    const verificationPending = profile?.verification_pending === true;
-    const emailVerified = Boolean(user.email_confirmed_at);
-    if (verificationPending && !emailVerified) {
-      if (!locale) return;
-      const email = user.email ? encodeURIComponent(user.email) : "";
-      const target = `/${locale}/verify-email${email ? `?email=${email}` : ""}` as Route;
-      router.replace(target);
-    }
-  }, [locale, profile?.verification_pending, router, user]);
-
   const onboardingDefaults = useMemo<OnboardingAnswers | undefined>(() => {
     if (!profile) return undefined;
     const onboarding = {

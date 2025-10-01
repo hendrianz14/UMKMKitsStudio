@@ -45,7 +45,7 @@ export default function MarketingPage() {
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
                   <Button size="lg" asChild>
-                    <Link href={`/${locale}/sign-up`}>Coba Gratis Sekarang</Link>
+                    <Link href={`/${locale}/auth/signup`}>Coba Gratis Sekarang</Link>
                   </Button>
                   <Button size="lg" variant="secondary" asChild>
                     <Link href="#editor-demo">

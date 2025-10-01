@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
+import { defaultLocale } from "@/lib/i18n";
 
 interface AuthProviderButtonsProps {
   className?: string;
@@ -68,6 +69,14 @@ export function AuthProviderButtons({
       icon: ReactNode;
     }> = [];
 
+    const resolveLocale = () => {
+      if (typeof window === "undefined") {
+        return defaultLocale;
+      }
+      const segment = window.location.pathname.split("/").filter(Boolean)[0];
+      return segment || defaultLocale;
+    };
+
     if (getGoogleEnabledFlag()) {
       list.push({
         id: "google",
@@ -77,11 +86,14 @@ export function AuthProviderButtons({
           if (typeof window === "undefined") {
             throw new Error("Window tidak tersedia untuk OAuth redirect");
           }
-          const query = window.location.search || "";
+          const locale = resolveLocale();
+          const nextPath = `/${locale}/dashboard`;
           const { error } = await getSupabaseBrowserClient().auth.signInWithOAuth({
             provider: "google",
             options: {
-              redirectTo: `${window.location.origin}/auth/callback${query}`,
+              redirectTo: `${window.location.origin}/${locale}/auth/callback?next=${encodeURIComponent(
+                nextPath
+              )}`,
               queryParams: { prompt: "select_account" },
             },
           });

@@ -13,7 +13,7 @@ const plans = [
     description: 'Eksperimen dengan 50 kredit gratis setiap bulan dan watermark minimal.',
     features: ['50 kredit/bulan', 'Export resolusi HD', 'Watermark mikro di sudut bawah'],
     cta: 'Mulai Gratis',
-    href: '/sign-up',
+    href: '/auth/signup',
     highlight: false
   },
   {

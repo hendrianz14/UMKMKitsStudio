@@ -181,7 +181,7 @@ export default function ForgotPasswordPage() {
         </form>
         <CardXFooter>
           <Link
-            href={`/${locale}/sign-in`}
+            href={`/${locale}/auth/login`}
             className="text-sm font-medium text-primary hover:text-primary/90"
           >
             Kembali ke halaman masuk
