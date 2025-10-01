@@ -10,9 +10,11 @@ export const dynamic = "force-dynamic";
 
 async function waitForSession(sb: SupabaseClient, tries = 8, delay = 150) {
   for (let i = 0; i < tries; i++) {
-    const { data: { session } } = await sb.auth.getSession();
+    const {
+      data: { session },
+    } = await sb.auth.getSession();
     if (session) return session;
-    await new Promise(r => setTimeout(r, delay));
+    await new Promise((r) => setTimeout(r, delay));
   }
   return null;
 }
@@ -25,17 +27,15 @@ function Inner() {
     (async () => {
       const sb: SupabaseClient = supaBrowser();
 
-      // Biarkan supabase-js memproses ?code=... otomatis (detectSessionInUrl: true)
-      // Lalu tunggu session-nya siap
+      // Biarkan supabase-js detect ?code=... otomatis.
       let session = await waitForSession(sb);
       if (!session) {
-        // Terakhir, coba manual exchange hanya jika benar2 ada ?code=
         const code = search.get("code");
         if (code) {
           try {
             const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
             if (!error) session = (await sb.auth.getSession()).data.session ?? null;
-          } catch { /* ignore */ }
+          } catch {}
         }
       }
       if (!session) {
@@ -43,7 +43,7 @@ function Inner() {
         return;
       }
 
-      // Sinkronkan cookie sesi ke server (agar SSR melihat user)
+      // Sinkronkan cookie sesi HTTP-only agar SSR mengenali user
       try {
         await fetch("/api/auth/session-sync", {
           method: "POST",
@@ -55,7 +55,7 @@ function Inner() {
         });
       } catch {}
 
-      // Bootstrap user OAuth (profiles + free plan + credits trial) — idempotent
+      // Bootstrap user baru via OAuth (profiles + free plan + trial) — idempotent
       try {
         await fetch("/api/auth/oauth-bootstrap", {
           method: "POST",
@@ -63,7 +63,6 @@ function Inner() {
         });
       } catch {}
 
-      // Redirect aman ke target
       const raw = search.get("redirect");
       const to: Route = raw && raw.startsWith("/") ? (raw as Route) : ("/dashboard" as Route);
       router.replace(to);
@@ -79,7 +78,13 @@ function Inner() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><div className="animate-pulse text-sm opacity-70">Membuka…</div></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="animate-pulse text-sm opacity-70">Membuka…</div>
+        </div>
+      }
+    >
       <Inner />
     </Suspense>
   );
