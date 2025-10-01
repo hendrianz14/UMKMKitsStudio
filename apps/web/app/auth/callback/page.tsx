@@ -29,6 +29,7 @@ function Inner() {
           return;
         }
 
+      }
 
       const {
         data: { session },
@@ -48,8 +49,8 @@ function Inner() {
 
       const raw = search.get("redirect");
       const to: NextRoute =
-        raw && raw.startsWith("/") ? (raw as NextRoute) : ("/dashboard" as NextRoute);
-eplace(to);
+        raw && raw.startsWith("/") ? (raw as NextRoute) : ("/dashboard" as NextRoute);      router.replace(to);
+
     })();
   }, [router, search]);
 

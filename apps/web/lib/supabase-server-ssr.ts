@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-
 import type { CookieMethodsServerDeprecated } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
 
 type SupabaseServerClient = SupabaseClient<any, any, any>;
 
