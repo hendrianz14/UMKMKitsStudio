@@ -224,7 +224,7 @@ export default function AuthActionPage() {
         <CardX tone="surface" padding="lg" className="space-y-4">
           <CardXHeader title="Tautan tidak valid" subtitle="Parameter yang dibutuhkan tidak ditemukan." />
           <CardXFooter>
-            <Link href={`/${locale}/sign-in`} className="text-sm font-medium text-primary hover:text-primary/90">
+            <Link href={`/${locale}/auth/login`} className="text-sm font-medium text-primary hover:text-primary/90">
               Kembali ke halaman masuk
             </Link>
           </CardXFooter>
@@ -302,7 +302,7 @@ export default function AuthActionPage() {
               Ke Dashboard
             </Button>
             <Button type="button" variant="outline" className="text-white" asChild>
-              <Link href={`/${locale}/sign-in`}>Masuk</Link>
+              <Link href={`/${locale}/auth/login`}>Masuk</Link>
             </Button>
           </div>
         </CardX>
@@ -402,7 +402,7 @@ export default function AuthActionPage() {
                 <span>Password berhasil diperbarui.</span>
               </div>
               <Button asChild className="btn-primary text-white w-full">
-                <Link href={`/${locale}/sign-in`}>Masuk</Link>
+                <Link href={`/${locale}/auth/login`}>Masuk</Link>
               </Button>
             </div>
           ) : null}
@@ -416,7 +416,7 @@ export default function AuthActionPage() {
       <CardX tone="surface" padding="lg" className="space-y-4">
         <CardXHeader title="Tindakan tidak dikenal" subtitle="Mode tindakan tidak dikenali." />
         <CardXFooter>
-          <Link href={`/${locale}/sign-in`} className="text-sm font-medium text-primary hover:text-primary/90">
+          <Link href={`/${locale}/auth/login`} className="text-sm font-medium text-primary hover:text-primary/90">
             Kembali ke halaman masuk
           </Link>
         </CardXFooter>

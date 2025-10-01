@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LangToggle } from "@/components/lang-toggle";
 import type { Locale } from "@/lib/i18n";
-import { isValidLocale } from "@/lib/i18n";
+import { defaultLocale, isValidLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import AuthNav from "@/components/auth/AuthNav";
 
@@ -27,7 +27,8 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
   const pathname = usePathname();
 
   const localeFromParams = params?.locale && isValidLocale(params.locale) ? params.locale : undefined;
-  const resolvedLocale = localeFromParams ?? locale;
+  const fallbackLocale = localeFromParams ?? locale ?? defaultLocale;
+  const resolvedLocale = fallbackLocale;
   const base: `/${Locale}` | "" = localeFromParams ? `/${localeFromParams}` : "";
   const basePathString = base || "/";
   const basePath = basePathString as Route;
@@ -63,7 +64,9 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
   }, [showMarketing]);
 
   const navItems = useMemo(() => (showMarketing ? NAV_SECTIONS : []), [showMarketing]);
-  const dashboardPath = (base ? `${base}/dashboard` : "/dashboard") as Route;
+  const dashboardPath = (base
+    ? (`${base}/dashboard` as Route)
+    : (`/${fallbackLocale}/dashboard` as Route));
   const brandHref = pathname?.startsWith(dashboardPath) ? (pathname as Route) : basePath;
   const marketingHref = useMemo(
     () =>

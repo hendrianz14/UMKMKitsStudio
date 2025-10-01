@@ -30,7 +30,7 @@ export default async function LocaleLanding({ params }: { params: Promise<{ loca
               <p className="max-w-xl text-lg text-[var(--text-muted)]">{t('heroSubtitle')}</p>
               <div className="flex flex-wrap items-center gap-4">
                 <Button size="lg" asChild>
-                  <Link href={`/${locale}/sign-up`}>{t('cta')}</Link>
+                  <Link href={`/${locale}/auth/signup`}>{t('cta')}</Link>
                 </Button>
                 <Button size="lg" variant="secondary" asChild>
                   <Link href={`/${locale}/editor`}>

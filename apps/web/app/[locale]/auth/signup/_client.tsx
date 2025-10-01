@@ -18,6 +18,7 @@ import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supaBrowser } from "@/lib/supabase-browser";
 import { isAllowedGmail, isValidEmailFormat, normalizeEmail } from "@/lib/email";
+import { defaultLocale } from "@/lib/i18n";
 
 
 const GoogleIcon = () => (
@@ -83,7 +84,15 @@ export default function SignUpPage() {
   }, [countdown]);
 
   const passwordValid = useMemo(() => isPasswordValid(password), [password]);
-  const dashboardPath = useMemo(() => (locale ? `/${locale}/dashboard` : "/dashboard"), [locale]);
+  const resolvedLocale = useMemo(() => {
+    if (locale) return locale;
+    if (typeof window !== "undefined") {
+      const segment = window.location.pathname.split("/").filter(Boolean)[0];
+      if (segment) return segment;
+    }
+    return defaultLocale;
+  }, [locale]);
+  const dashboardPath = useMemo(() => `/${resolvedLocale}/dashboard`, [resolvedLocale]);
 
   const handleSendCode = useCallback(async () => {
     if (sendingCode || countdown > 0) return;
@@ -266,9 +275,14 @@ export default function SignUpPage() {
       }
 
       const query = typeof window !== "undefined" ? window.location.search : "";
+      const nextPath = `/${resolvedLocale}/dashboard`;
       const { error: oauthError } = await supaBrowser().auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback${query}` },
+        options: {
+          redirectTo: `${window.location.origin}/${resolvedLocale}/auth/callback?next=${encodeURIComponent(
+            nextPath
+          )}`,
+        },
       });
       if (oauthError) {
         setError(oauthError.message || "Gagal masuk dengan Google.");
@@ -286,7 +300,7 @@ export default function SignUpPage() {
       }
       setGoogleLoading(false);
     }
-  }, [configError, googleLoading]);
+  }, [configError, googleLoading, resolvedLocale]);
 
   if (configError) {
     return (
@@ -439,7 +453,10 @@ export default function SignUpPage() {
         <CardXFooter>
           <p className="text-sm text-muted-foreground">
             Sudah punya akun?{" "}
-            <Link href={`/${locale}/sign-in`} className="font-medium text-primary hover:text-primary/90">
+            <Link
+              href={`/${resolvedLocale}/auth/login`}
+              className="font-medium text-primary hover:text-primary/90"
+            >
               {t("signIn")}
             </Link>
           </p>

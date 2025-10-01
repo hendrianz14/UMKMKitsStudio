@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next";
 
 import { supaBrowser } from "@/lib/supabase-browser";
+import { defaultLocale } from "@/lib/i18n";
 
 export default function UpdatePasswordClient() {
   const search = useSearchParams();
@@ -27,7 +28,7 @@ export default function UpdatePasswordClient() {
       return;
     }
     setMsg("Berhasil. Mengarahkan...");
-    router.replace("/login?reset=ok" as Route);
+    router.replace(`/${defaultLocale}/auth/login?reset=ok` as Route);
   };
 
   return (

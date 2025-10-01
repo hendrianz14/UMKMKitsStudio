@@ -1,10 +1,12 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { supaBrowser } from "@/lib/supabase-browser";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Route } from "next";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { supaBrowser } from "@/lib/supabase-browser";
+import { defaultLocale } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,7 @@ async function waitForSession(sb: SupabaseClient, tries = 8, delay = 150) {
       data: { session },
     } = await sb.auth.getSession();
     if (session) return session;
-    await new Promise((r) => setTimeout(r, delay));
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
   return null;
 }
@@ -22,28 +24,31 @@ async function waitForSession(sb: SupabaseClient, tries = 8, delay = 150) {
 function Inner() {
   const router = useRouter();
   const search = useSearchParams();
+  const params = useParams<{ locale?: string }>();
+  const locale = params?.locale || defaultLocale;
 
   useEffect(() => {
-    (async () => {
-      const sb: SupabaseClient = supaBrowser();
+    void (async () => {
+      const sb = supaBrowser();
 
-      // Biarkan supabase-js detect ?code=... otomatis.
       let session = await waitForSession(sb);
       if (!session) {
         const code = search.get("code");
         if (code) {
           try {
             const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
-            if (!error) session = (await sb.auth.getSession()).data.session ?? null;
+            if (!error) {
+              session = (await sb.auth.getSession()).data.session ?? null;
+            }
           } catch {}
         }
       }
+
       if (!session) {
-        router.replace("/login" as Route);
+        router.replace(`/${locale}/auth/login` as Route);
         return;
       }
 
-      // Sinkronkan cookie sesi HTTP-only agar SSR mengenali user
       try {
         await fetch("/api/auth/session-sync", {
           method: "POST",
@@ -55,7 +60,6 @@ function Inner() {
         });
       } catch {}
 
-      // Bootstrap user baru via OAuth (profiles + free plan + trial) — idempotent
       try {
         await fetch("/api/auth/oauth-bootstrap", {
           method: "POST",
@@ -63,11 +67,14 @@ function Inner() {
         });
       } catch {}
 
-      const raw = search.get("redirect");
-      const to: Route = raw && raw.startsWith("/") ? (raw as Route) : ("/dashboard" as Route);
+      const nextParam = search.get("next");
+      const fallback = `/${locale}/dashboard`;
+      const to: Route = nextParam && nextParam.startsWith("/")
+        ? (nextParam as Route)
+        : (fallback as Route);
       router.replace(to);
     })();
-  }, [router, search]);
+  }, [locale, router, search]);
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center">

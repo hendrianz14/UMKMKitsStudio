@@ -11,7 +11,7 @@ export default async function Page({
   const { locale } = await params;
   const user = await getServerUser();
   if (!user) {
-    redirect(`/login?redirect=/${locale}/editor`);
+    redirect(`/${locale}/auth/login?redirect=/${locale}/editor`);
   }
   return <EditorClient />;
 }

@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Route } from "next";
 import { useParams, useRouter } from "next/navigation";
 
-import { isValidLocale } from "@/lib/i18n";
+import { defaultLocale, isValidLocale } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 
 const SIGN_IN_ROUTES = {
-  id: "/id/sign-in",
-  en: "/en/sign-in"
-} satisfies Record<Locale, `/${Locale}/sign-in`>;
+  id: "/id/auth/login",
+  en: "/en/auth/login"
+} satisfies Record<Locale, `/${Locale}/auth/login`>;
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -18,7 +19,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { locale } = (useParams<{ locale?: string }>() ?? {}) as { locale?: string };
   const resolvedLocale = locale && isValidLocale(locale) ? (locale as Locale) : undefined;
-  const signInPath = resolvedLocale ? SIGN_IN_ROUTES[resolvedLocale] : "/sign-in";
+  const signInPath: Route = resolvedLocale
+    ? SIGN_IN_ROUTES[resolvedLocale]
+    : (`/${defaultLocale}/auth/login` as Route);
 
   useEffect(() => {
     let unsubscribed = false;

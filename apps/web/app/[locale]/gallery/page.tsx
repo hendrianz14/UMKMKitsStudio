@@ -21,7 +21,7 @@ export default async function GalleryPage({
   const { locale } = await params;
   const user = await getServerUser();
   if (!user) {
-    redirect(`/login?redirect=/${locale}/gallery`);
+    redirect(`/${locale}/auth/login?redirect=/${locale}/gallery`);
   }
   return (
     <div className="space-y-8">

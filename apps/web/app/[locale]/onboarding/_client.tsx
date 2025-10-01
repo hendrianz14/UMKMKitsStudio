@@ -2,17 +2,39 @@
 
 export const dynamic = 'force-dynamic';
 
+import type { Route } from 'next';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardX } from '@/components/ui/cardx';
 import { Input } from '@/components/ui/input';
 import { CreditBadge } from '@/components/credit-badge';
+import { defaultLocale } from '@/lib/i18n';
 
 export default function OnboardingPage() {
+  const router = useRouter();
+  const { locale } = useParams<{ locale?: string }>();
   const t = useTranslations('auth');
   const [language, setLanguage] = useState<'id' | 'en'>('id');
   const [business, setBusiness] = useState('');
+  const [saving, setSaving] = useState(false);
+  const resolvedLocale = locale ?? defaultLocale;
+
+  const handleComplete = useCallback(async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const response = await fetch('/api/profile/onboarding-complete', { method: 'POST' });
+      if (!response.ok) {
+        throw new Error('Failed to complete onboarding');
+      }
+      router.replace(`/${resolvedLocale}/dashboard` as Route);
+    } catch (error) {
+      console.error('[onboarding] Failed to complete onboarding', error);
+      setSaving(false);
+    }
+  }, [resolvedLocale, router, saving]);
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -56,7 +78,7 @@ export default function OnboardingPage() {
             />
           </div>
         </div>
-        <Button className="mt-2" size="lg">
+        <Button className="mt-2" size="lg" onClick={() => void handleComplete()}>
           Simpan preferensi
         </Button>
       </CardX>
