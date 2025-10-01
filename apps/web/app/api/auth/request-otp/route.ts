@@ -28,21 +28,6 @@ function requireEnv(keys: string[]) {
   return miss;
 }
 
-async function findUserByEmail(admin: ReturnType<typeof supaAdmin>, email: string) {
-  const target = email.toLowerCase();
-  let page = 1;
-  const perPage = 200;
-  for (let i = 0; i < 5; i += 1) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
-    if (error) break;
-    const user = data.users.find((x) => (x.email || "").toLowerCase() === target);
-    if (user) return user;
-    if (data.users.length < perPage) break;
-    page += 1;
-  }
-  return null;
-}
-
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = requestSchema.safeParse(body);
@@ -85,17 +70,30 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = supaAdmin();
+  const admin = supaAdmin();
+  async function findUserByEmail(targetEmail: string) {
+    const t = targetEmail.toLowerCase();
+    let page = 1;
+    const perPage = 200;
+    for (let i = 0; i < 5; i += 1) {
+      const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+      if (error) break;
+      const user = data.users.find((x) => (x.email || "").toLowerCase() === t);
+      if (user) return user;
+      if (data.users.length < perPage) break;
+      page += 1;
+    }
+    return null;
+  }
 
-  const existing = await findUserByEmail(supabase, email);
-  if (existing) {
+  if (await findUserByEmail(email)) {
     return NextResponse.json(
       { error: "Email sudah terdaftar. Silakan masuk atau gunakan lupa password." },
       { status: 409 }
     );
   }
 
-  const { data: rateRows, error: rateError } = await supabase
+  const { data: rateRows, error: rateError } = await admin
     .from("email_otps")
     .select("last_sent_at")
     .eq("email", email)
@@ -129,7 +127,7 @@ export async function POST(request: Request) {
   const createdIp =
     forwardedFor?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip") ?? null;
 
-  const { data: insertedRows, error: insertError } = await supabase
+  const { data: insertedRows, error: insertError } = await admin
     .from("email_otps")
     .insert({
       email,
@@ -157,7 +155,7 @@ export async function POST(request: Request) {
     await sendOtpEmail(email, code);
   } catch (error) {
     if (insertedId !== undefined) {
-      await supabase.from("email_otps").delete().eq("id", insertedId);
+      await admin.from("email_otps").delete().eq("id", insertedId);
     }
     console.error("[request-otp] Failed to send OTP email", error);
     return NextResponse.json(
