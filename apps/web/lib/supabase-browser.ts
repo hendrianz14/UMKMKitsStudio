@@ -1,9 +1,32 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type SupabaseBrowserClient = SupabaseClient<any, "public", "public", any, any>;
+export type SupabaseBrowserClient = SupabaseClient<any, any, any>;
 
 let _client: SupabaseBrowserClient | null = null;
+
+function getDocumentCookie(name: string) {
+  if (typeof document === "undefined") return undefined;
+  return document.cookie
+    .split("; ")
+    .find((value) => value.startsWith(`${name}=`))
+    ?.split("=")[1];
+}
+
+function setDocumentCookie(name: string, value: string, options?: { maxAge?: number; sameSite?: string }) {
+  if (typeof document === "undefined" || typeof window === "undefined") return;
+  const maxAge = options?.maxAge ?? 31536000;
+  const sameSite = options?.sameSite ?? "Lax";
+  const secure = window.location.protocol === "https:" ? "Secure" : "";
+  document.cookie = `${name}=${value}; Path=/; Max-Age=${maxAge}; SameSite=${sameSite}; ${secure}`.trim();
+}
+
+function removeDocumentCookie(name: string, options?: { sameSite?: string }) {
+  if (typeof document === "undefined" || typeof window === "undefined") return;
+  const sameSite = options?.sameSite ?? "Lax";
+  const secure = window.location.protocol === "https:" ? "Secure" : "";
+  document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=${sameSite}; ${secure}`.trim();
+}
 
 export function supaBrowser(): SupabaseBrowserClient {
   if (_client) return _client;
@@ -13,25 +36,18 @@ export function supaBrowser(): SupabaseBrowserClient {
   if (!url || !anon) throw new Error("[supabase-browser] Missing NEXT_PUBLIC_SUPABASE_*");
 
   _client = createBrowserClient(url, anon, {
-    cookies: {
-      get(name) {
-        return document.cookie
-          .split("; ")
-          .find((value) => value.startsWith(`${name}=`))?.split("=")[1];
-      },
-      set(name, value, options) {
-        document.cookie = `${name}=${value}; Path=/; Max-Age=${options?.maxAge ?? 60 * 60 * 24 * 365}; SameSite=${options?.sameSite ?? "Lax"}; ${
-          location.protocol === "https:" ? "Secure" : ""
-        }`;
-      },
-      remove(name, options) {
-        document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=${options?.sameSite ?? "Lax"}; ${
-          location.protocol === "https:" ? "Secure" : ""
-        }`;
-      },
+    auth: {
+      flowType: "pkce",
+      persistSession: true,
+      detectSessionInUrl: true,
+      autoRefreshToken: true,
     },
-    auth: { persistSession: true, detectSessionInUrl: true, autoRefreshToken: true },
-  }) as unknown as SupabaseBrowserClient;
+    cookies: {
+      get: (name) => getDocumentCookie(name),
+      set: (name, value, options) => setDocumentCookie(name, value, options),
+      remove: (name, options) => removeDocumentCookie(name, options),
+    },
+  }) as SupabaseBrowserClient;
 
   return _client;
 }

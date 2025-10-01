@@ -1,9 +1,10 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
-import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supaBrowser } from "@/lib/supabase-browser";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Route as NextRoute } from "next";
 
 export const dynamic = "force-dynamic";
 
@@ -13,31 +14,37 @@ function Inner() {
 
   useEffect(() => {
     (async () => {
-      const sb = supaBrowser();
+      const sb: SupabaseClient = supaBrowser();
 
       const code = search.get("code");
       if (code) {
         const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
-        if (error) return router.replace("/login?error=oauth");
+        if (error) {
+          console.error("PKCE exchange:", error);
+          router.replace("/login?error=oauth" as unknown as NextRoute);
+          return;
+        }
       }
 
       const {
         data: { session },
       } = await sb.auth.getSession();
-      if (!session) return router.replace("/login");
+      if (!session) {
+        router.replace("/login" as NextRoute);
+        return;
+      }
 
-      await fetch("/api/auth/oauth-bootstrap", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      }).catch(() => {});
+      try {
+        await fetch("/api/auth/oauth-bootstrap", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+      } catch {}
 
-      const redirectParam = search.get("redirect");
-      const target =
-        redirectParam && redirectParam.startsWith("/")
-          ? (redirectParam as Route)
-          : ("/dashboard" as Route);
-
-      router.replace(target);
+      const raw = search.get("redirect");
+      const to: NextRoute =
+        raw && raw.startsWith("/") ? (raw as NextRoute) : ("/dashboard" as NextRoute);
+      router.replace(to);
     })();
   }, [router, search]);
 
@@ -50,13 +57,7 @@ function Inner() {
 
 export default function Page() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="animate-pulse text-sm opacity-70">Membuka…</div>
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><div className="animate-pulse text-sm opacity-70">Membuka…</div></div>}>
       <Inner />
     </Suspense>
   );
