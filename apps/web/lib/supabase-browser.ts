@@ -41,6 +41,7 @@ export function supaBrowser(): SupabaseBrowserClient {
       persistSession: true,
       detectSessionInUrl: true,
       autoRefreshToken: true,
+
     },
     cookies: {
       get: (name) => getDocumentCookie(name),
@@ -48,6 +49,7 @@ export function supaBrowser(): SupabaseBrowserClient {
       remove: (name, options) => removeDocumentCookie(name, options),
     },
   }) as SupabaseBrowserClient;
+
 
   return _client;
 }
