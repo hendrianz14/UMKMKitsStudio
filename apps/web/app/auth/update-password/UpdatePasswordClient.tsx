@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { Route } from "next";
 
 import { supaBrowser } from "@/lib/supabase-browser";
 
@@ -26,7 +27,7 @@ export default function UpdatePasswordClient() {
       return;
     }
     setMsg("Berhasil. Mengarahkan...");
-    router.replace("/login?reset=ok");
+    router.replace("/login?reset=ok" as Route);
   };
 
   return (

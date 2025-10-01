@@ -5,6 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import { supaBrowser } from "@/lib/supabase-browser";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+import type { Route } from "next";
+
+
 export const dynamic = "force-dynamic";
 
 function Inner() {
@@ -17,11 +21,9 @@ function Inner() {
 
       const code = search.get("code");
       if (code) {
-        const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
-        if (error) {
-          console.error("PKCE exchange:", error);
-          return router.replace(("/login?error=oauth") as unknown as Route);
-        }
+
+        if (error) return router.replace("/login?error=oauth" as Route);
+
       }
 
       const {
@@ -29,14 +31,28 @@ function Inner() {
       } = await sb.auth.getSession();
       if (!session) return router.replace("/login" as Route);
 
-      await fetch("/api/auth/oauth-bootstrap", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      }).catch(() => {});
+      try {
+        await fetch("/api/auth/session-sync", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          }),
+        });
+      } catch {}
+
+
+      try {
+        await fetch("/api/auth/oauth-bootstrap", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+      } catch {}
 
       const raw = search.get("redirect");
-      const to: Route =
-        raw && raw.startsWith("/") ? (raw as Route) : ("/dashboard" as Route);
+      const to: Route = raw && raw.startsWith("/") ? (raw as Route) : ("/dashboard" as Route);
+
       router.replace(to);
     })();
   }, [router, search]);
@@ -49,13 +65,7 @@ function Inner() {
 }
 export default function Page() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="animate-pulse text-sm opacity-70">Membuka…</div>
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><div className="animate-pulse text-sm opacity-70">Membuka…</div></div>}>
       <Inner />
     </Suspense>
   );

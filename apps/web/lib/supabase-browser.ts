@@ -18,22 +18,7 @@ export function supaBrowser(): SupabaseBrowserClient {
       persistSession: true,
       detectSessionInUrl: true,
       autoRefreshToken: true,
-    },
-    cookies: {
-      get: (name) =>
-        document.cookie
-          .split("; ")
-          .find((value) => value.startsWith(`${name}=`))?.split("=")[1],
-      set: (name, value, options) => {
-        document.cookie = `${name}=${value}; Path=/; Max-Age=${options?.maxAge ?? 31536000}; SameSite=${options?.sameSite ?? "Lax"}; ${
-          location.protocol === "https:" ? "Secure" : ""
-        }`;
-      },
-      remove: (name, options) => {
-        document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=${options?.sameSite ?? "Lax"}; ${
-          location.protocol === "https:" ? "Secure" : ""
-        }`;
-      },
+
     },
   }) as unknown as SupabaseBrowserClient;
 

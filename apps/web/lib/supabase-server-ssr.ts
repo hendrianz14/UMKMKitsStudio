@@ -11,8 +11,7 @@ export function supaServer(): SupabaseClient<any, any, any> {
       cookies: {
         get: (name) => c.get(name)?.value,
         set: (name, value, options) => c.set({ name, value, ...options }),
-        remove: (name, options) =>
-          c.set({ name, value: "", ...options, maxAge: 0 }),
+        remove: (name, options) => c.set({ name, value: "", ...options, maxAge: 0 }),
       },
     }
   ) as unknown as SupabaseClient<any, any, any>;
