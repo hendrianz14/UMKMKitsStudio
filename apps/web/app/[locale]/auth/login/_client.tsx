@@ -13,7 +13,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supaBrowser } from "@/lib/supabase-browser";
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
 
-type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
+type RouterNavigateArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
+type RouterObjectArg = Extract<RouterNavigateArg, { pathname: string }>;
 
 const GoogleIcon = () => (
   <svg
@@ -74,8 +75,8 @@ export default function SignInPage() {
     }
     return defaultLocale;
   }, [locale]);
-  const dashboardHref = useMemo(
-    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
+  const dashboardHref = useMemo<RouterObjectArg>(
+    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } } as const),
     [resolvedLocale]
   );
   const forgotPasswordHref = useMemo(
@@ -113,7 +114,7 @@ export default function SignInPage() {
         setError(signInError.message || "Kredensial tidak valid.");
         return;
       }
-      router.replace(dashboardHref as unknown as RouterReplaceArg);
+      router.replace(dashboardHref);
     } catch (err) {
       if (typeof window !== "undefined") {
         console.error("[sign-in] Login error", err);

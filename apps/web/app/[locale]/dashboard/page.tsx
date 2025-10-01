@@ -8,12 +8,12 @@ export const dynamic = "force-dynamic";
 export default async function Page({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: { locale: string };
 }) {
-  const { locale } = await params;
+  const { locale } = params;
   const user = await getServerUser();
   if (!user) {
-    redirect(`/${locale}/auth/login?redirect=/${locale}/dashboard` as unknown as import("next").Route);
+    redirect(`/${locale}/auth/login?redirect=/${locale}/dashboard`);
   }
 
   const supabase = await supaServer();
@@ -45,7 +45,7 @@ export default async function Page({
   );
 
   if (!completed) {
-    redirect(`/${locale}/onboarding` as unknown as import("next").Route);
+    redirect(`/${locale}/onboarding`);
   }
 
   return <DashboardClient />;
