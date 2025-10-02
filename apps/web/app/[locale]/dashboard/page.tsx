@@ -12,7 +12,7 @@ type ProfileRow = {
   trial_credits: number | null;
   trial_expires_at: string | null;
   full_name: string | null;
-};
+} | null;
 
 type CreditTransactionRow = {
   id: string;
@@ -46,33 +46,37 @@ export default async function Page({
     redirect(redirectPath);
   }
 
-  const { data: profileRaw } = await sb
+  const { data: profileData } = await sb
     .from("profiles")
-    .select("plan, plan_expires_at, credits, trial_credits, trial_expires_at, full_name")
+    .select(
+      "plan, plan_expires_at, credits, trial_credits, trial_expires_at, full_name"
+    )
     .eq("user_id", user.id)
-    .maybeSingle();
+    .single();
 
-  const profile = (profileRaw ?? null) as ProfileRow | null;
+  const profile = (profileData ?? null) as ProfileRow;
 
   const monday = new Date();
   monday.setHours(0, 0, 0, 0);
-  const day = monday.getDay();
-  const diff = (day + 6) % 7;
-  monday.setDate(monday.getDate() - diff);
+  const dow = (monday.getDay() + 6) % 7;
+  monday.setDate(monday.getDate() - dow);
 
-  const { count: jobsCount } = await sb
+  const { count: jobsThisWeek = 0 } = await sb
     .from("ai_jobs")
     .select("id", { count: "exact", head: true })
-    .gte("created_at", monday.toISOString())
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .gte("created_at", monday.toISOString());
 
-  const { data: txUsedRows } = await sb
+  const { data: usedRows } = await sb
     .from("credit_transactions")
     .select("amount")
     .eq("user_id", user.id)
     .lt("amount", 0);
 
-  const totalUsed = (txUsedRows ?? []).reduce<number>((sum, row) => sum + Math.abs(row.amount), 0);
+  const totalUsed = (usedRows ?? []).reduce<number>((sum, row) => {
+    const amount = typeof row.amount === "number" ? row.amount : 0;
+    return sum + Math.abs(amount);
+  }, 0);
 
   const { data: history } = await sb
     .from("credit_transactions")
@@ -92,7 +96,7 @@ export default async function Page({
     <DashboardClient
       locale={locale}
       profile={profile}
-      jobsThisWeek={jobsCount ?? 0}
+      jobsThisWeek={jobsThisWeek ?? 0}
       totalUsed={totalUsed}
       history={(history ?? []) as CreditTransactionRow[]}
       projects={(projects ?? []) as ProjectRow[]}
