@@ -3,14 +3,12 @@ import { NextIntlClientProvider } from "next-intl";
 import { notFound } from "next/navigation";
 import { ReactNode } from "react";
 import { unstable_setRequestLocale } from "next-intl/server";
-import { Plus_Jakarta_Sans } from "next/font/google";
 
 import { cn } from "@/lib/utils";
 import { ToasterClient } from "@/components/ToasterClient";
 import { isValidLocale, locales } from "@/lib/i18n";
 import { FooterNoSSR, NavbarNoSSR } from "@/components/no-ssr";
-
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+import { fontSans } from "@/styles/fonts";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -46,7 +44,7 @@ export default async function LocaleLayout({
       <body
         className={cn(
           "min-h-dvh bg-background text-foreground font-sans antialiased",
-          jakarta.variable
+          fontSans.variable
         )}
       >
         <NextIntlClientProvider locale={locale} messages={messages}>
