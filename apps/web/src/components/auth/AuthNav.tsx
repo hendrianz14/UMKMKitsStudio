@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { useParams, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { defaultLocale, isValidLocale } from "@/lib/i18n";
@@ -9,8 +10,8 @@ import type { Locale } from "@/lib/i18n";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 
 const AUTH_ROUTE_SEGMENTS = [
-  "/auth/login",
-  "/auth/signup",
+  "/sign-in",
+  "/sign-up",
   "/forgot-password",
   "/auth/action",
 ] as const;
@@ -46,14 +47,14 @@ export default function AuthNav({
   );
   const signInHref = useMemo(
     () => ({
-      pathname: "/[locale]/auth/login",
+      pathname: "/[locale]/sign-in",
       params: { locale: finalLocale }
     }) as const,
     [finalLocale]
   );
   const signUpHref = useMemo(
     () => ({
-      pathname: "/[locale]/auth/signup",
+      pathname: "/[locale]/sign-up",
       params: { locale: finalLocale }
     }) as const,
     [finalLocale]
@@ -65,18 +66,20 @@ export default function AuthNav({
 
     supabase.auth
       .getSession()
-      .then(({ data }) => {
+      .then(({ data }: { data: { session: Session | null } }) => {
         if (cancelled) return;
         setAuthState(data.session ? "authenticated" : "guest");
       })
-      .catch((error) => {
+      .catch((error: any) => {
         console.warn("[auth-nav] Failed to get session", error);
         if (!cancelled) setAuthState("guest");
       });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
-      setAuthState(session ? "authenticated" : "guest");
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event: string, session: Session | null) => {
+        setAuthState(session ? "authenticated" : "guest");
+      }
+    );
 
     return () => {
       cancelled = true;
