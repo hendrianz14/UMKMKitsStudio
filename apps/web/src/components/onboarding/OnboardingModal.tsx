@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { SelectInput } from "./SelectInput";
 
@@ -21,6 +22,8 @@ export type OnboardingModalProps = {
 export default function OnboardingModal({ open, onClose, initial }: OnboardingModalProps) {
   if (!open) return null;
 
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
   const [stateUserType, setStateUserType] = useState<UserType>(
     initial?.usage_type === "team" ? "Tim" : "Personal"
   );
@@ -29,27 +32,43 @@ export default function OnboardingModal({ open, onClose, initial }: OnboardingMo
   const [stateSource, setStateSource] = useState(initial?.source ?? "");
 
   const handleSave = async () => {
+    if (saving) return;
     if (!stateMainPurpose || !stateBusinessType.trim() || !stateSource) {
       return;
     }
 
-    await fetch("/api/profile/onboarding/save", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        answers: {
-          usage_type: stateUserType === "Tim" ? "team" : "personal",
-          purpose: stateMainPurpose,
-          business_type: stateBusinessType,
-          ref_source: stateSource,
-          other_note: undefined,
-        },
-      }),
-    });
-    onClose();
+    setSaving(true);
+    try {
+      const response = await fetch("/api/profile/onboarding/save", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          answers: {
+            usage_type: stateUserType === "Tim" ? "team" : "personal",
+            purpose: stateMainPurpose,
+            business_type: stateBusinessType,
+            ref_source: stateSource,
+            other_note: undefined,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("onboarding/save failed:", await response.text());
+        setSaving(false);
+        return;
+      }
+
+      onClose();
+      router.refresh();
+    } catch (error) {
+      console.error("onboarding/save error:", error);
+      setSaving(false);
+    }
   };
 
   const handleSkip = () => {
+    if (saving) return;
     onClose();
   };
 
@@ -85,7 +104,7 @@ export default function OnboardingModal({ open, onClose, initial }: OnboardingMo
           </p>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); void handleSave(); }} className="space-y-6">
+        <form className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Tipe pengguna</label>
             <div className="grid grid-cols-2 gap-2 p-1 bg-[#21262D] rounded-lg">
@@ -132,16 +151,20 @@ export default function OnboardingModal({ open, onClose, initial }: OnboardingMo
 
         <div className="flex items-center justify-between pt-2">
           <button
+            type="button"
             onClick={handleSkip}
             className="text-gray-400 hover:text-white transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#161B22] focus:ring-blue-500 rounded-md px-2 py-1"
+            disabled={saving}
           >
             Lewati dulu
           </button>
           <button
+            type="button"
             onClick={handleSave}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#161B22] focus:ring-blue-500"
+            disabled={saving}
           >
-            Simpan jawaban
+            {saving ? "Menyimpan..." : "Simpan jawaban"}
           </button>
         </div>
       </div>
