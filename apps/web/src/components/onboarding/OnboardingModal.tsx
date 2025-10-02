@@ -19,13 +19,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  PURPOSES,
+  SOURCES,
+  type OnboardingPurpose,
+  type OnboardingRefSource,
+} from "@/lib/onboarding-options";
 import { cn } from "@/lib/utils";
 
 export interface OnboardingAnswers {
   usage_type: "personal" | "team";
-  purpose: string;
+  purpose: OnboardingPurpose;
   business_type: string;
-  ref_source: "friend" | "search" | "ad" | "other";
+  ref_source: OnboardingRefSource;
   other_note?: string;
 }
 
@@ -41,12 +47,24 @@ const USER_TYPES: Array<{ value: OnboardingAnswers["usage_type"]; label: string 
   { value: "team", label: "Tim" },
 ];
 
-const PURPOSE_OPTIONS = [
-  { value: "ig", label: "Konten IG/TikTok" },
-  { value: "catalog", label: "Katalog Produk" },
-  { value: "ads", label: "Iklan" },
-  { value: "other", label: "Lainnya" },
-];
+const LEGACY_PURPOSE_MAP: Record<string, OnboardingPurpose> = {
+  ig: "content_auto",
+  "konten ig/tiktok": "content_auto",
+  catalog: "sell_more",
+  "katalog produk": "sell_more",
+  ads: "sell_more",
+  "iklan": "sell_more",
+  lainnya: "other",
+};
+
+const LEGACY_SOURCE_MAP: Record<string, OnboardingRefSource> = {
+  ad: "ads",
+  ads: "ads",
+  "iklan": "ads",
+  teman: "friend",
+  "pencarian (google, dsb.)": "search",
+  lainnya: "other",
+};
 
 const BUSINESS_TYPES = [
   "Kuliner",
@@ -57,22 +75,15 @@ const BUSINESS_TYPES = [
   "Elektronik",
 ];
 
-const SOURCE_OPTIONS: Array<{ value: OnboardingAnswers["ref_source"]; label: string }> = [
-  { value: "friend", label: "Teman" },
-  { value: "search", label: "Pencarian (Google, dsb.)" },
-  { value: "ad", label: "Iklan" },
-  { value: "other", label: "Lainnya" },
-];
-
 export function OnboardingModal({ open, defaultValues, onSave, onSkip }: OnboardingModalProps) {
   const [usageType, setUsageType] = useState<OnboardingAnswers["usage_type"]>(
     defaultValues?.usage_type ?? "personal"
   );
-  const [purpose, setPurpose] = useState<string>(defaultValues?.purpose ?? "");
-  const [industry, setIndustry] = useState<string>(defaultValues?.business_type ?? "");
-  const [source, setSource] = useState<OnboardingAnswers["ref_source"] | "">(
-    defaultValues?.ref_source ?? ""
+  const [purpose, setPurpose] = useState<OnboardingPurpose | "">(
+    defaultValues?.purpose ?? ""
   );
+  const [industry, setIndustry] = useState<string>(defaultValues?.business_type ?? "");
+  const [source, setSource] = useState<OnboardingRefSource | "">(defaultValues?.ref_source ?? "");
   const [otherNote, setOtherNote] = useState<string>(defaultValues?.other_note ?? "");
   const [status, setStatus] = useState<"idle" | "saving" | "skipping">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -83,37 +94,66 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
 
   useEffect(() => {
     if (!open) return;
-    const resolvePurpose = (value?: string) => {
+    const resolvePurpose = (value?: string | null): OnboardingPurpose | "" => {
       if (!value) return "";
-      const match = PURPOSE_OPTIONS.find(
-        (option) => option.value === value || option.label.toLowerCase() === value.toLowerCase()
-      );
-      return match ? match.value : value;
+      const normalized = value.trim().toLowerCase();
+      const direct = PURPOSES.find((option) => option.value === value);
+      if (direct) {
+        return direct.value;
+      }
+      const byLabel = PURPOSES.find((option) => option.label.toLowerCase() === normalized);
+      if (byLabel) {
+        return byLabel.value;
+      }
+      return LEGACY_PURPOSE_MAP[normalized] ?? "";
+    };
+
+    const resolveSource = (value?: string | null): OnboardingRefSource | "" => {
+      if (!value) return "";
+      const normalized = value.trim().toLowerCase();
+      const direct = SOURCES.find((option) => option.value === value);
+      if (direct) {
+        return direct.value;
+      }
+      const byLabel = SOURCES.find((option) => option.label.toLowerCase() === normalized);
+      if (byLabel) {
+        return byLabel.value;
+      }
+      return LEGACY_SOURCE_MAP[normalized] ?? "";
     };
 
     setUsageType(defaultValues?.usage_type ?? "personal");
     setPurpose(resolvePurpose(defaultValues?.purpose));
     setIndustry(defaultValues?.business_type ?? "");
-    setSource(defaultValues?.ref_source ?? "");
+    setSource(resolveSource(defaultValues?.ref_source));
     setOtherNote(defaultValues?.other_note ?? "");
     setError(null);
   }, [defaultValues, open]);
+
+  useEffect(() => {
+    setError(null);
+  }, [purpose, industry, source, otherNote]);
 
   const isSaving = status === "saving";
   const isSkipping = status === "skipping";
   const isBusy = status !== "idle";
 
   const handleSubmit = async () => {
-    if (!isValid) return;
+    if (!isValid) {
+      setError("Lengkapi semua bidang wajib terlebih dahulu.");
+      return;
+    }
     setStatus("saving");
     setError(null);
     try {
       const trimmedOther = otherNote.trim();
+      const selectedPurpose = purpose as OnboardingPurpose;
+      const selectedSource = source as OnboardingRefSource;
       await onSave({
-        usage_type: usageType === "team" ? "team" : "personal",
-        purpose,
+        usage_type: usageType,
+        purpose: selectedPurpose,
         business_type: industry.trim(),
-        ref_source: source as OnboardingAnswers["ref_source"],
+        ref_source: selectedSource,
         other_note: trimmedOther ? trimmedOther : undefined,
       });
     } catch (err) {
@@ -166,12 +206,15 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">Tujuan utama pakai UMKM Kits</p>
-            <Select value={purpose} onValueChange={setPurpose}>
+            <Select
+              value={purpose}
+              onValueChange={(value) => setPurpose(value as OnboardingPurpose)}
+            >
               <SelectTrigger className="text-white placeholder:text-muted-foreground">
                 <SelectValue placeholder="Pilih tujuan" />
               </SelectTrigger>
               <SelectContent className="text-foreground">
-                {PURPOSE_OPTIONS.map((option) => (
+                {PURPOSES.map((option) => (
                   <SelectItem key={option.value} value={option.value} className="text-foreground">
                     {option.label}
                   </SelectItem>
@@ -199,14 +242,14 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">Dari mana tahu UMKM Kits Studio?</p>
             <Select
-              value={source || undefined}
-              onValueChange={(value) => setSource(value as OnboardingAnswers["ref_source"])}
+              value={source}
+              onValueChange={(value) => setSource(value as OnboardingRefSource)}
             >
               <SelectTrigger className="text-white placeholder:text-muted-foreground">
                 <SelectValue placeholder="Pilih sumber" />
               </SelectTrigger>
               <SelectContent className="text-foreground">
-                {SOURCE_OPTIONS.map((item) => (
+                {SOURCES.map((item) => (
                   <SelectItem key={item.value} value={item.value} className="text-foreground">
                     {item.label}
                   </SelectItem>
