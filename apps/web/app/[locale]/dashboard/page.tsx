@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 
 import { getServerUser, supaServer } from "@/lib/supabase-server-ssr";
-import { path } from "@/lib/locale-nav";
 import DashboardClient from "./_client";
 
 export const dynamic = "force-dynamic";
@@ -20,8 +19,7 @@ export default async function Page({
   const user = await getServerUser();
   if (!user) {
     const search = new URLSearchParams({ redirect: `/${locale}/dashboard` });
-    const signInRoute = path("/[locale]/sign-in", locale);
-    redirect(`${signInRoute}?${search.toString()}`);
+    redirect(`/${locale}/sign-in?${search.toString()}`);
   }
 
   const supabase = await supaServer();
