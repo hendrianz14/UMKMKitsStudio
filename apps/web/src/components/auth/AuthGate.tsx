@@ -18,7 +18,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const finalLocale: Locale = resolvedLocale ?? defaultLocale;
   const signInHref = useMemo(
     () => ({
-      pathname: "/[locale]/auth/login",
+      pathname: "/[locale]/sign-in",
       params: { locale: finalLocale }
     }) as const,
     [finalLocale]

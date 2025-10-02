@@ -11,6 +11,32 @@ const config = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'files.umkmkitsstudio.com' }
     ]
+  },
+  async redirects() {
+    return [
+      {
+        source: '/:locale/auth/login',
+        has: [{ type: 'host', value: '(.*)' }],
+        destination: '/:locale/sign-in',
+        permanent: true
+      },
+      {
+        source: '/:locale/auth/signup',
+        has: [{ type: 'host', value: '(.*)' }],
+        destination: '/:locale/sign-up',
+        permanent: true
+      },
+      {
+        source: '/auth/login',
+        destination: '/id/sign-in',
+        permanent: true
+      },
+      {
+        source: '/auth/signup',
+        destination: '/id/sign-up',
+        permanent: true
+      }
+    ];
   }
 };
 

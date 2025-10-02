@@ -19,7 +19,7 @@ import { defaultLocale, type Locale } from '@/lib/i18n';
 
 export default function MarketingPage() {
   const locale: Locale = defaultLocale;
-  const signUpHref = { pathname: '/[locale]/auth/signup', params: { locale } } as const;
+  const signUpHref = { pathname: '/[locale]/sign-up', params: { locale } } as const;
   const editorHref = { pathname: '/[locale]/editor', params: { locale } } as const;
 
   return (

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import type { Route } from "next";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 import { EmailField, PasswordField } from "@/components/auth/AuthFormParts";
@@ -73,16 +72,16 @@ export default function SignInPage() {
     }
     return defaultLocale;
   }, [locale]);
-  const dashboardHref = useMemo<Route>(
-    () => (`/${resolvedLocale}/dashboard`) as Route,
+  const dashboardHref = useMemo(
+    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
     [resolvedLocale]
   );
-  const forgotPasswordHref = useMemo<Route>(
-    () => (`/${resolvedLocale}/forgot-password`) as Route,
+  const forgotPasswordHref = useMemo(
+    () => ({ pathname: "/[locale]/forgot-password", params: { locale: resolvedLocale } }) as const,
     [resolvedLocale]
   );
-  const signUpHref = useMemo<Route>(
-    () => (`/${resolvedLocale}/auth/signup`) as Route,
+  const signUpHref = useMemo(
+    () => ({ pathname: "/[locale]/sign-up", params: { locale: resolvedLocale } }) as const,
     [resolvedLocale]
   );
 
@@ -112,7 +111,7 @@ export default function SignInPage() {
         setError(signInError.message || "Kredensial tidak valid.");
         return;
       }
-      router.replace(dashboardHref);
+      router.replace(dashboardHref as unknown as RouterReplaceArg);
     } catch (err) {
       if (typeof window !== "undefined") {
         console.error("[sign-in] Login error", err);
@@ -278,3 +277,4 @@ export default function SignInPage() {
     </div>
   );
 }
+type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];

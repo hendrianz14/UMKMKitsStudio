@@ -1,21 +1,23 @@
-import type { Metadata } from 'next';
-import { NextIntlClientProvider } from 'next-intl';
-import { notFound } from 'next/navigation';
-import { ReactNode } from 'react';
-import { unstable_setRequestLocale } from 'next-intl/server';
-import { Plus_Jakarta_Sans } from 'next/font/google';
-import { cn } from '@/lib/utils';
-import { ToasterClient } from '@/components/ToasterClient';
-import { isValidLocale, locales } from '@/lib/i18n';
-import { FooterNoSSR, NavbarNoSSR } from '@/components/no-ssr';
+import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { notFound } from "next/navigation";
+import { ReactNode } from "react";
+import { unstable_setRequestLocale } from "next-intl/server";
+import { Plus_Jakarta_Sans } from "next/font/google";
 
-const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
+import { cn } from "@/lib/utils";
+import { ToasterClient } from "@/components/ToasterClient";
+import { isValidLocale, locales } from "@/lib/i18n";
+import { FooterNoSSR, NavbarNoSSR } from "@/components/no-ssr";
 
-export const dynamic = 'force-dynamic';
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 
 export const metadata: Metadata = {
-  title: 'UMKM Kits Studio',
-  description: 'Platform kreatif modern untuk UMKM kuliner dengan AI caption dan editor desain.'
+  title: "UMKM Kits Studio",
+  description: "Platform kreatif modern untuk UMKM kuliner dengan AI caption dan editor desain."
 };
 
 export function generateStaticParams() {
@@ -43,7 +45,7 @@ export default async function LocaleLayout({
     <html lang={locale} className="dark" suppressHydrationWarning>
       <body
         className={cn(
-          'min-h-dvh bg-background text-foreground font-sans antialiased',
+          "min-h-dvh bg-background text-foreground font-sans antialiased",
           jakarta.variable
         )}
       >

@@ -9,8 +9,8 @@ import type { Locale } from "@/lib/i18n";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 
 const AUTH_ROUTE_SEGMENTS = [
-  "/auth/login",
-  "/auth/signup",
+  "/sign-in",
+  "/sign-up",
   "/forgot-password",
   "/auth/action",
 ] as const;
@@ -46,14 +46,14 @@ export default function AuthNav({
   );
   const signInHref = useMemo(
     () => ({
-      pathname: "/[locale]/auth/login",
+      pathname: "/[locale]/sign-in",
       params: { locale: finalLocale }
     }) as const,
     [finalLocale]
   );
   const signUpHref = useMemo(
     () => ({
-      pathname: "/[locale]/auth/signup",
+      pathname: "/[locale]/sign-up",
       params: { locale: finalLocale }
     }) as const,
     [finalLocale]

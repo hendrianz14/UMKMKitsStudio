@@ -35,6 +35,10 @@ function buildTargetHref(pathname: string | null | undefined, locale: Locale) {
         return { pathname: '/[locale]/gallery', params: { locale } } as const;
       case 'forgot-password':
         return { pathname: '/[locale]/forgot-password', params: { locale } } as const;
+      case 'sign-in':
+        return { pathname: '/[locale]/sign-in', params: { locale } } as const;
+      case 'sign-up':
+        return { pathname: '/[locale]/sign-up', params: { locale } } as const;
       default:
         return { pathname: '/[locale]', params: { locale } } as const;
     }
@@ -43,16 +47,14 @@ function buildTargetHref(pathname: string | null | undefined, locale: Locale) {
   if (rest[0] === 'auth') {
     const segment = rest[1];
     switch (segment) {
-      case 'login':
-        return { pathname: '/[locale]/auth/login', params: { locale } } as const;
-      case 'signup':
-        return { pathname: '/[locale]/auth/signup', params: { locale } } as const;
       case 'callback':
         return { pathname: '/[locale]/auth/callback', params: { locale } } as const;
       case 'action':
         return { pathname: '/[locale]/auth/action', params: { locale } } as const;
+      case 'update-password':
+        return { pathname: '/[locale]/auth/update-password', params: { locale } } as const;
       default:
-        return { pathname: '/[locale]/auth/login', params: { locale } } as const;
+        return { pathname: '/[locale]/auth/callback', params: { locale } } as const;
     }
   }
 

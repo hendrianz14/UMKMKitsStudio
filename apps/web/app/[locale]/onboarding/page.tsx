@@ -11,7 +11,8 @@ export default async function Page({
   const { locale } = await params;
   const user = await getServerUser();
   if (!user) {
-    redirect(`/${locale}/auth/login?redirect=/${locale}/onboarding` as unknown as import("next").Route);
+    const search = new URLSearchParams({ redirect: `/${locale}/onboarding` });
+    redirect(`/${locale}/sign-in?${search.toString()}`);
   }
 
   const supabase = await supaServer();
@@ -42,7 +43,7 @@ export default async function Page({
   );
 
   if (completed) {
-    redirect(`/${locale}/dashboard` as unknown as import("next").Route);
+    redirect(`/${locale}/dashboard`);
   }
 
   return <OnboardingClient />;

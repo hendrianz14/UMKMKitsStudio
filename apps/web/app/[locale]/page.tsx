@@ -14,7 +14,7 @@ import { defaultLocale, isValidLocale, type Locale } from '@/lib/i18n';
 export default async function LocaleLanding({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale: Locale = isValidLocale(rawLocale) ? (rawLocale as Locale) : defaultLocale;
-  const signUpHref = { pathname: '/[locale]/auth/signup', params: { locale } } as const;
+  const signUpHref = { pathname: '/[locale]/sign-up', params: { locale } } as const;
   const editorHref = { pathname: '/[locale]/editor', params: { locale } } as const;
   const t = await getTranslations({ locale, namespace: 'common' });
 

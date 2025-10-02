@@ -13,7 +13,8 @@ export default async function Page({
   const { locale } = await params;
   const user = await getServerUser();
   if (!user) {
-    redirect(`/${locale}/auth/login?redirect=/${locale}/dashboard`);
+    const search = new URLSearchParams({ redirect: `/${locale}/dashboard` });
+    redirect(`/${locale}/sign-in?${search.toString()}`);
   }
 
   const supabase = await supaServer();

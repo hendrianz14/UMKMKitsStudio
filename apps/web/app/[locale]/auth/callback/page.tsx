@@ -4,7 +4,9 @@ import { Suspense, useEffect } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { supaBrowser } from "@/lib/supabase-browser";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Route } from "next";
+import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
+
+type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
 
 export const dynamic = "force-dynamic"; // client-only, no prerender
 
@@ -21,10 +23,11 @@ async function waitForSession(sb: SupabaseClient, tries = 10, delay = 150) {
 
 function CallbackInner() {
   const router = useRouter();
-  const params = useParams<{ locale: string }>();
+  const params = useParams<{ locale?: string }>();
   const search = useSearchParams();
 
-  const locale = params?.locale || "id"; // fallback aman
+  const paramsLocale = params?.locale;
+  const locale: Locale = paramsLocale && isValidLocale(paramsLocale) ? paramsLocale : defaultLocale;
 
   useEffect(() => {
     (async () => {
@@ -47,7 +50,7 @@ function CallbackInner() {
       }
 
       if (!session) {
-        router.replace((`/${locale}/auth/login`) as Route);
+        router.replace({ pathname: "/[locale]/sign-in", params: { locale } } as unknown as RouterReplaceArg);
         return;
       }
 
@@ -73,18 +76,13 @@ function CallbackInner() {
 
       // Tentukan target redirect
       const nextRaw = search.get("next");
-      const to: Route =
-        nextRaw && nextRaw.startsWith("/")
-          ? (nextRaw as Route)
-          : ("/" + locale + "/dashboard") as Route;
-
-      // Gunakan object href untuk typed routes
-      if (to === ("/" + locale + "/dashboard") as Route) {
-        router.replace((`/${locale}/dashboard`) as Route);
-      } else {
-        router.replace(to);
+      if (nextRaw && nextRaw.startsWith("/")) {
+        router.replace(nextRaw as unknown as RouterReplaceArg);
+        return;
       }
-    })();
+
+      router.replace({ pathname: "/[locale]/dashboard", params: { locale } } as unknown as RouterReplaceArg);
+  })();
   }, [router, search, params, locale]);
 
   return (
