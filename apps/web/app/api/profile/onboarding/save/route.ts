@@ -3,14 +3,15 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { SOURCE_VALUES, PURPOSE_VALUES } from "@/lib/onboarding-options";
 import { supaServer } from "@/lib/supabase-server-ssr";
 
 const Payload = z.object({
   answers: z.object({
     usage_type: z.enum(["personal", "team"]),
-    purpose: z.string().min(1),
+    purpose: z.enum(PURPOSE_VALUES),
     business_type: z.string().min(1),
-    ref_source: z.enum(["friend", "search", "ad", "other"]),
+    ref_source: z.enum(SOURCE_VALUES),
     other_note: z.string().optional(),
   }),
 });
