@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { redirect } from "next/navigation";
 import type { Route } from "next";
 
@@ -28,8 +31,6 @@ type ProjectRow = {
   updated_at: string;
 };
 
-export const dynamic = "force-dynamic";
-
 export default async function Page({
   params,
 }: {
@@ -46,6 +47,8 @@ export default async function Page({
     redirect(redirectPath);
   }
 
+  await sb.from("profiles").upsert({ user_id: user.id }).select().single();
+
   const { data: profileData } = await sb
     .from("profiles")
     .select(
@@ -56,14 +59,15 @@ export default async function Page({
 
   const profile = (profileData ?? null) as ProfileRow;
 
-  const monday = new Date();
+  const now = new Date();
+  const monday = new Date(now);
+  const dow = (now.getDay() + 6) % 7;
+  monday.setDate(now.getDate() - dow);
   monday.setHours(0, 0, 0, 0);
-  const dow = (monday.getDay() + 6) % 7;
-  monday.setDate(monday.getDate() - dow);
 
   const { count: jobsThisWeek = 0 } = await sb
     .from("ai_jobs")
-    .select("id", { count: "exact", head: true })
+    .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
     .gte("created_at", monday.toISOString());
 
@@ -90,7 +94,7 @@ export default async function Page({
     .select("id, title, cover_url, updated_at")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false })
-    .limit(3);
+    .limit(12);
 
   return (
     <DashboardClient
@@ -100,6 +104,7 @@ export default async function Page({
       totalUsed={totalUsed}
       history={(history ?? []) as CreditTransactionRow[]}
       projects={(projects ?? []) as ProjectRow[]}
+      userId={user.id}
     />
   );
 }
