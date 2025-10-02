@@ -32,6 +32,7 @@
     "next-intl": "^3.15.2",
     "posthog-js": "^1.210.1",
     "react": "19.0.0-rc-66855b96-20241106",
+    "react-hook-form": "^7.53.0",
     "react-compare-slider": "^3.1.0",
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-dropzone": "^14.2.3",
