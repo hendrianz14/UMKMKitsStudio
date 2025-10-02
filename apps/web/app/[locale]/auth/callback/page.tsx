@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { supaBrowser } from "@/lib/supabase-browser";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { path } from "@/lib/locale-nav";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Route } from "next";
@@ -31,7 +31,7 @@ function CallbackInner() {
 
   useEffect(() => {
     (async () => {
-      const sb: SupabaseClient = supaBrowser();
+      const sb: SupabaseClient = supabaseBrowser;
 
       // Biarkan supabase-js auto proses PKCE (?code=...) via detectSessionInUrl
       let session = await waitForSession(sb);
