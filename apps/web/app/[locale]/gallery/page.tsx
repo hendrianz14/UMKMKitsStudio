@@ -5,7 +5,7 @@ import { CardX } from "@/components/ui/cardx";
 import { templates } from "@/data/templates";
 import { getServerUser } from "@/lib/supabase-server-ssr";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 const demoAssets = templates.map((template, index) => ({
   id: `${template.id}-${index}`,
@@ -21,7 +21,8 @@ export default async function GalleryPage({
   const { locale } = await params;
   const user = await getServerUser();
   if (!user) {
-    redirect(`/${locale}/auth/login?redirect=/${locale}/gallery` as unknown as import("next").Route);
+    const search = new URLSearchParams({ redirect: `/${locale}/gallery` });
+    redirect(`/${locale}/sign-in?${search.toString()}`);
   }
   return (
     <div className="space-y-8">

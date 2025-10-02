@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import type { Route } from "next";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 import {
@@ -94,12 +93,12 @@ export default function SignUpPage() {
     }
     return defaultLocale;
   }, [locale]);
-  const dashboardHref = useMemo<Route>(
-    () => (`/${resolvedLocale}/dashboard`) as Route,
+  const dashboardHref = useMemo(
+    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
     [resolvedLocale]
   );
-  const signInHref = useMemo<Route>(
-    () => (`/${resolvedLocale}/auth/login`) as Route,
+  const signInHref = useMemo(
+    () => ({ pathname: "/[locale]/sign-in", params: { locale: resolvedLocale } }) as const,
     [resolvedLocale]
   );
 
@@ -253,7 +252,7 @@ export default function SignUpPage() {
           return;
         }
 
-        router.replace(dashboardHref);
+        router.replace(dashboardHref as unknown as RouterReplaceArg);
       } catch (err) {
         if (typeof window !== "undefined") {
           console.error("[sign-up] Register error", err);
@@ -470,3 +469,4 @@ export default function SignUpPage() {
     </div>
   );
 }
+type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];

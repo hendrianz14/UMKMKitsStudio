@@ -39,7 +39,7 @@ export default function UpdatePasswordClient() {
     }
     setMsg("Berhasil. Mengarahkan...");
     router.replace({
-      pathname: "/[locale]/auth/login",
+      pathname: "/[locale]/sign-in",
       params: { locale: resolvedLocale },
       query: { reset: "ok" },
     } as unknown as RouterReplaceArg);

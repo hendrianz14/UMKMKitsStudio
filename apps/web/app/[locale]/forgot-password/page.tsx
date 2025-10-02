@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
     return defaultLocale;
   }, [locale]);
   const loginHref = useMemo(
-    () => ({ pathname: "/[locale]/auth/login", params: { locale: resolvedLocale } }) as const,
+    () => ({ pathname: "/[locale]/sign-in", params: { locale: resolvedLocale } }) as const,
     [resolvedLocale]
   );
   const [email, setEmail] = useState("");
