@@ -1,7 +1,7 @@
 export const PURPOSES = [
-  { value: "sell_more", label: "Meningkatkan penjualan" },
-  { value: "brand_build", label: "Membangun brand" },
-  { value: "content_auto", label: "Otomasi konten" },
+  { value: "content", label: "Membuat konten promosi" },
+  { value: "branding", label: "Meningkatkan branding usaha" },
+  { value: "social", label: "Manajemen media sosial" },
   { value: "other", label: "Lainnya" },
 ] as const;
 
@@ -13,10 +13,10 @@ export const PURPOSE_VALUES = PURPOSES.map((option) => option.value) as [
 ];
 
 export const SOURCES = [
-  { value: "friend", label: "Teman" },
-  { value: "search", label: "Pencarian (Google, dsb.)" },
+  { value: "social_media", label: "Media Sosial" },
+  { value: "friends", label: "Teman/Keluarga" },
+  { value: "google", label: "Pencarian Google" },
   { value: "ads", label: "Iklan" },
-  { value: "other", label: "Lainnya" },
 ] as const;
 
 export type OnboardingRefSource = (typeof SOURCES)[number]["value"];
