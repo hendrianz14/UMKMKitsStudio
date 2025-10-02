@@ -10,34 +10,11 @@ import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { createClient } from "@supabase/supabase-js";
-const [showOnboarding, setShowOnboarding] = useState(!profile?.onboarding_completed);
 
-useEffect(() => {
-  setShowOnboarding(!profile?.onboarding_completed);
-}, [profile?.onboarding_completed]);
+import { supaBrowser } from "@/lib/supabase-clients";
+import OnboardingModal from "@/components/onboarding/OnboardingModal";
 
-{showOnboarding && (
-  <OnboardingModal
-    open
-    onClose={() => setShowOnboarding(false)}
-    initial={{
-      usage_type: profile?.onboarding_answers?.usage_type,
-      mainPurpose: profile?.onboarding_answers?.purpose,
-      businessType: profile?.onboarding_answers?.business_type,
-      source: profile?.onboarding_answers?.ref_source,
-    }}
-  />
-)}
 const placeholderCover = "/images/dashboard-placeholder.svg";
-
-function supaBrowser() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: true, storageKey: "umkmkits.auth" } }
-  );
-}
 
 type Profile = {
   plan: string | null;
@@ -46,6 +23,14 @@ type Profile = {
   trial_credits: number | null;
   trial_expires_at: string | null;
   full_name: string | null;
+  onboarding_completed: boolean | null;
+  onboarding_answers: {
+    usage_type?: "personal" | "team";
+    purpose?: string;
+    business_type?: string;
+    ref_source?: string;
+    other_note?: string;
+  } | null;
 } | null;
 
 type TX = {
@@ -60,6 +45,14 @@ type Project = {
   title: string;
   cover_url: string | null;
   updated_at: string;
+};
+
+type OnboardingAnswers = {
+  usage_type: "personal" | "team";
+  purpose: string;
+  business_type: string;
+  ref_source: string;
+  other_note?: string;
 };
 
 export default function DashboardClient({
@@ -85,6 +78,18 @@ export default function DashboardClient({
   const [totalUsed, setTotalUsed] = useState(initialUsed);
   const [history, setHistory] = useState<TX[]>(initialHistory);
   const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [showOnboarding, setShowOnboarding] = useState(
+    !initialProfile?.onboarding_completed
+  );
+
+  useEffect(() => {
+    setProfile(initialProfile);
+  }, [initialProfile]);
+
+  useEffect(() => {
+    setShowOnboarding(!profile?.onboarding_completed);
+  }, [profile?.onboarding_completed]);
+
   const topupHref = useMemo(
     () => (`/${locale}/billing/topup` as Route),
     [locale]
@@ -121,6 +126,8 @@ export default function DashboardClient({
                 trial_credits: 0,
                 trial_expires_at: null,
                 full_name: null,
+                onboarding_completed: null,
+                onboarding_answers: null,
               };
             }
             return { ...prev, credits };
@@ -233,6 +240,37 @@ export default function DashboardClient({
 
   return (
     <div className="space-y-8 px-6 py-6">
+      {showOnboarding && (
+        <OnboardingModal
+          open
+          onClose={() => setShowOnboarding(false)}
+          initial={{
+            usage_type: profile?.onboarding_answers?.usage_type ?? "personal",
+            purpose: profile?.onboarding_answers?.purpose ?? "",
+            business_type: profile?.onboarding_answers?.business_type ?? "",
+            ref_source: profile?.onboarding_answers?.ref_source ?? "",
+            other_note: profile?.onboarding_answers?.other_note,
+          }}
+          onSubmit={async (answers: OnboardingAnswers) => {
+            await fetch("/api/profile/onboarding/save", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ answers }),
+            });
+            setProfile((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    onboarding_completed: true,
+                    onboarding_answers: answers,
+                  }
+                : prev
+            );
+            setShowOnboarding(false);
+          }}
+        />
+      )}
+
       <div>
         <h1 className="text-3xl font-extrabold text-white md:text-4xl">
           Dasbor AI Anda{profile?.full_name ? `, ${profile.full_name}` : ""}

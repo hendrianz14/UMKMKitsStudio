@@ -3,8 +3,7 @@ export const revalidate = 0;
 
 import { redirect } from "next/navigation";
 import type { Route } from "next";
-
-import { supaServer } from "@/lib/supabase-server-ssr";
+import { supaServer } from "@/lib/supabase-clients";
 
 import DashboardClient from "./DashboardClient";
 
@@ -15,21 +14,12 @@ type ProfileRow = {
   trial_credits: number | null;
   trial_expires_at: string | null;
   full_name: string | null;
+  onboarding_completed: boolean | null;
+  onboarding_answers: any | null;
 } | null;
 
-type CreditTransactionRow = {
-  id: string;
-  amount: number;
-  reason: string;
-  created_at: string;
-};
-
-type ProjectRow = {
-  id: string;
-  title: string;
-  cover_url: string | null;
-  updated_at: string;
-};
+type CreditTx = { id: string; amount: number; reason: string; created_at: string };
+type ProjectRow = { id: string; title: string; cover_url: string | null; updated_at: string };
 
 export default async function Page({
   params,
@@ -37,26 +27,22 @@ export default async function Page({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const sb = await supaServer();
+
+  const sb = supaServer();
   const {
     data: { user },
   } = await sb.auth.getUser();
-
-  if (!user) {
-    const redirectPath = (`/${locale}/sign-in?redirect=/${locale}/dashboard` as unknown) as Route;
-    redirect(redirectPath);
-  }
+  if (!user) redirect((`/${locale}/sign-in?redirect=/${locale}/dashboard` as unknown) as Route);
 
   await sb.from("profiles").upsert({ user_id: user.id }).select().single();
 
   const { data: profileData } = await sb
     .from("profiles")
     .select(
-      "plan, plan_expires_at, credits, trial_credits, trial_expires_at, full_name"
+      "plan, plan_expires_at, credits, trial_credits, trial_expires_at, full_name, onboarding_completed, onboarding_answers"
     )
     .eq("user_id", user.id)
     .single();
-
   const profile = (profileData ?? null) as ProfileRow;
 
   const now = new Date();
@@ -77,10 +63,7 @@ export default async function Page({
     .eq("user_id", user.id)
     .lt("amount", 0);
 
-  const totalUsed = (usedRows ?? []).reduce<number>((sum, row) => {
-    const amount = typeof row.amount === "number" ? row.amount : 0;
-    return sum + Math.abs(amount);
-  }, 0);
+  const totalUsed = (usedRows ?? []).reduce((s, r: any) => s + Math.abs(r.amount ?? 0), 0);
 
   const { data: history } = await sb
     .from("credit_transactions")
@@ -99,12 +82,12 @@ export default async function Page({
   return (
     <DashboardClient
       locale={locale}
+      userId={user.id}
       profile={profile}
       jobsThisWeek={jobsThisWeek ?? 0}
       totalUsed={totalUsed}
-      history={(history ?? []) as CreditTransactionRow[]}
+      history={(history ?? []) as CreditTx[]}
       projects={(projects ?? []) as ProjectRow[]}
-      userId={user.id}
     />
   );
 }

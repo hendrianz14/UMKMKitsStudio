@@ -1,9 +1,7 @@
 export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
-import { supaServer } from "@/lib/supabase-server-ssr";
+import { supaServer } from "@/lib/supabase-clients";
 
 const Payload = z.object({
   answers: z.object({
@@ -16,26 +14,15 @@ const Payload = z.object({
 });
 
 export async function POST(req: Request) {
-  const sb = await supaServer();
-
+  const sb = supaServer();
   const {
     data: { user },
-    error: userErr,
   } = await sb.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (userErr) {
-    console.error("[onboarding/save] getUser error:", userErr);
-  }
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const json = await req.json().catch(() => null);
-  const parsed = Payload.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Bad request" }, { status: 400 });
-  }
+  const body = await req.json().catch(() => null);
+  const parsed = Payload.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Bad request" }, { status: 400 });
 
   const { error } = await sb
     .from("profiles")
@@ -46,10 +33,6 @@ export async function POST(req: Request) {
     })
     .eq("user_id", user.id);
 
-  if (error) {
-    console.error("[onboarding/save] update error:", error);
-    return NextResponse.json({ error: "DB_ERROR" }, { status: 500 });
-  }
-
+  if (error) return NextResponse.json({ error: "DB_ERROR" }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
