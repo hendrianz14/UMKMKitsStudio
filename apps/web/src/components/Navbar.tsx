@@ -5,6 +5,8 @@ import { useParams, usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Menu, Sparkles } from "lucide-react";
 import { motion, useScroll } from "framer-motion";
+
+import { href } from "@/lib/locale-nav";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LangToggle } from "@/components/lang-toggle";
@@ -29,9 +31,7 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
   const fallbackLocale = locale ?? defaultLocale;
   const resolvedLocale = localeFromParams ?? fallbackLocale;
   const basePathString = localeFromParams ? `/${localeFromParams}` : "/";
-  const baseHref = localeFromParams
-    ? ({ pathname: "/[locale]", params: { locale: localeFromParams } }) as const
-    : "/";
+  const baseHref = localeFromParams ? href("/[locale]", localeFromParams) : "/";
   const showMarketing = showSections ?? (pathname === "/" || pathname === basePathString);
   const [active, setActive] = useState("home");
 
@@ -65,15 +65,12 @@ export function Navbar({ locale = "id", showSections }: { locale?: Locale; showS
 
   const navItems = useMemo(() => (showMarketing ? NAV_SECTIONS : []), [showMarketing]);
   const dashboardPathname = `/${resolvedLocale}/dashboard`;
-  const dashboardHref = useMemo(
-    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
+  const dashboardHref = useMemo(() => href("/[locale]/dashboard", resolvedLocale), [resolvedLocale]);
   const brandHref = pathname?.startsWith(dashboardPathname) ? dashboardHref : baseHref;
   const marketingHref = useMemo(() => {
     if (localeFromParams) {
       return (id: (typeof NAV_SECTIONS)[number]["id"]) =>
-        ({ pathname: "/[locale]", params: { locale: localeFromParams }, hash: id }) as const;
+        ({ ...href("/[locale]", localeFromParams), hash: id }) as const;
     }
     return (id: (typeof NAV_SECTIONS)[number]["id"]) => ({ pathname: "/", hash: id }) as const;
   }, [localeFromParams]);

@@ -3,11 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+import { path } from "@/lib/locale-nav";
 import { defaultLocale, isValidLocale } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
-
-type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -16,13 +15,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const { locale } = (useParams<{ locale?: string }>() ?? {}) as { locale?: string };
   const resolvedLocale = locale && isValidLocale(locale) ? (locale as Locale) : undefined;
   const finalLocale: Locale = resolvedLocale ?? defaultLocale;
-  const signInHref = useMemo(
-    () => ({
-      pathname: "/[locale]/sign-in",
-      params: { locale: finalLocale }
-    }) as const,
-    [finalLocale]
-  );
+  const signInPath = useMemo(() => path("/[locale]/sign-in", finalLocale), [finalLocale]);
 
   useEffect(() => {
     let unsubscribed = false;
@@ -34,14 +27,14 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         const authed = Boolean(data.session);
         setIsAuthenticated(authed);
         if (!authed) {
-          router.replace(signInHref as unknown as RouterReplaceArg);
+          router.replace(signInPath);
         }
       })
       .catch((error) => {
         console.warn("[auth-gate] Failed to get session", error);
         if (!unsubscribed) {
           setIsAuthenticated(false);
-          router.replace(signInHref as unknown as RouterReplaceArg);
+          router.replace(signInPath);
         }
       });
 
@@ -49,7 +42,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
       const authed = Boolean(session);
       setIsAuthenticated(authed);
       if (!authed) {
-        router.replace(signInHref as unknown as RouterReplaceArg);
+        router.replace(signInPath);
       }
     });
 
@@ -57,7 +50,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
       unsubscribed = true;
       authListener.subscription.unsubscribe();
     };
-  }, [router, signInHref, supabase]);
+  }, [router, signInPath, supabase]);
 
   if (isAuthenticated !== true) {
     return null;

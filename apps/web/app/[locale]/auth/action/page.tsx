@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { href, path } from "@/lib/locale-nav";
 import type { SupabaseBrowserClient } from "@/lib/supabase-browser";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 import { cn } from "@/lib/utils";
@@ -57,14 +58,8 @@ export default function AuthActionPage() {
     }
     return defaultLocale;
   }, [locale]);
-  const loginHref = useMemo(
-    () => ({ pathname: "/[locale]/sign-in", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
-  const dashboardHref = useMemo(
-    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
+  const loginHref = useMemo(() => href("/[locale]/sign-in", resolvedLocale), [resolvedLocale]);
+  const dashboardPath = useMemo(() => path("/[locale]/dashboard", resolvedLocale), [resolvedLocale]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     setHashParams(new URLSearchParams(window.location.hash.replace(/^#/, "")));
@@ -308,7 +303,7 @@ export default function AuthActionPage() {
                   window.location.href = continueUrl;
                   return;
                 }
-                router.replace(dashboardHref as unknown as Parameters<typeof router.replace>[0]);
+                router.replace(dashboardPath);
               }}
             >
               Ke Dashboard

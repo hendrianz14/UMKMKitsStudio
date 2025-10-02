@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { useParams, usePathname } from "next/navigation";
+import { href } from "@/lib/locale-nav";
 import { cn } from "@/lib/utils";
 import { defaultLocale, isValidLocale } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
@@ -38,27 +39,9 @@ export default function AuthNav({
   const activeLocale = locale && isValidLocale(locale) ? (locale as Locale) : fallbackLocale;
   const fallback = defaultLocale;
   const finalLocale: Locale = activeLocale ?? fallback;
-  const dashboardHref = useMemo(
-    () => ({
-      pathname: "/[locale]/dashboard",
-      params: { locale: finalLocale }
-    }) as const,
-    [finalLocale]
-  );
-  const signInHref = useMemo(
-    () => ({
-      pathname: "/[locale]/sign-in",
-      params: { locale: finalLocale }
-    }) as const,
-    [finalLocale]
-  );
-  const signUpHref = useMemo(
-    () => ({
-      pathname: "/[locale]/sign-up",
-      params: { locale: finalLocale }
-    }) as const,
-    [finalLocale]
-  );
+  const dashboardHref = useMemo(() => href("/[locale]/dashboard", finalLocale), [finalLocale]);
+  const signInHref = useMemo(() => href("/[locale]/sign-in", finalLocale), [finalLocale]);
+  const signUpHref = useMemo(() => href("/[locale]/sign-up", finalLocale), [finalLocale]);
   const dashboardPathname = `/${finalLocale}/dashboard`;
 
   useEffect(() => {

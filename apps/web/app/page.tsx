@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ArrowRight } from 'lucide-react';
+
+import { href } from '@/lib/locale-nav';
 import { BeforeAfterNoSSR, FeatureGridNoSSR, FooterNoSSR, NavbarNoSSR, PricingSectionNoSSR } from '@/components/no-ssr';
 const HeroInteractiveImage = dynamic(
   () => import('@/components/HeroInteractiveImage'),
@@ -19,8 +21,8 @@ import { defaultLocale, type Locale } from '@/lib/i18n';
 
 export default function MarketingPage() {
   const locale: Locale = defaultLocale;
-  const signUpHref = { pathname: '/[locale]/sign-up', params: { locale } } as const;
-  const editorHref = { pathname: '/[locale]/editor', params: { locale } } as const;
+  const signUpHref = href('/[locale]/sign-up', locale);
+  const editorHref = href('/[locale]/editor', locale);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-white">
