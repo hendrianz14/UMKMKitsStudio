@@ -7,19 +7,29 @@ import { SelectInput } from "./SelectInput";
 
 type UserType = "Personal" | "Tim";
 
+type Answers = {
+  usage_type: "personal" | "team";
+  purpose: string;
+  business_type: string;
+  ref_source: string;
+  other_note?: string;
+};
+
 export type OnboardingModalProps = {
   open: boolean;
   onClose: () => void;
   initial?: {
     usage_type?: "personal" | "team";
-    mainPurpose?: string;
-    businessType?: string;
-    source?: string;
+    purpose?: string;
+    business_type?: string;
+    ref_source?: string;
+    other_note?: string;
   };
+  onSubmit?: (answers: Answers) => Promise<void> | void;
   locale?: string;
 };
 
-export default function OnboardingModal({ open, onClose, initial }: OnboardingModalProps) {
+export default function OnboardingModal({ open, onClose, initial, onSubmit }: OnboardingModalProps) {
   if (!open) return null;
 
   const router = useRouter();
@@ -27,9 +37,10 @@ export default function OnboardingModal({ open, onClose, initial }: OnboardingMo
   const [stateUserType, setStateUserType] = useState<UserType>(
     initial?.usage_type === "team" ? "Tim" : "Personal"
   );
-  const [stateMainPurpose, setStateMainPurpose] = useState(initial?.mainPurpose ?? "");
-  const [stateBusinessType, setStateBusinessType] = useState(initial?.businessType ?? "Kuliner");
-  const [stateSource, setStateSource] = useState(initial?.source ?? "");
+  const [stateMainPurpose, setStateMainPurpose] = useState(initial?.purpose ?? "");
+  const [stateBusinessType, setStateBusinessType] = useState(initial?.business_type ?? "Kuliner");
+  const [stateSource, setStateSource] = useState(initial?.ref_source ?? "");
+  const [stateOtherNote, setStateOtherNote] = useState(initial?.other_note ?? "");
 
   const handleSave = async () => {
     if (saving) return;
@@ -38,25 +49,29 @@ export default function OnboardingModal({ open, onClose, initial }: OnboardingMo
     }
 
     setSaving(true);
-    try {
-      const response = await fetch("/api/profile/onboarding/save", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          answers: {
-            usage_type: stateUserType === "Tim" ? "team" : "personal",
-            purpose: stateMainPurpose,
-            business_type: stateBusinessType,
-            ref_source: stateSource,
-            other_note: undefined,
-          },
-        }),
-      });
+    const answers: Answers = {
+      usage_type: stateUserType === "Tim" ? "team" : "personal",
+      purpose: stateMainPurpose,
+      business_type: stateBusinessType,
+      ref_source: stateSource,
+      other_note: stateOtherNote || undefined,
+    };
 
-      if (!response.ok) {
-        console.error("onboarding/save failed:", await response.text());
-        setSaving(false);
-        return;
+    try {
+      if (onSubmit) {
+        await onSubmit(answers);
+      } else {
+        const response = await fetch("/api/profile/onboarding/save", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ answers }),
+        });
+
+        if (!response.ok) {
+          console.error("onboarding/save failed:", await response.text());
+          setSaving(false);
+          return;
+        }
       }
 
       onClose();
@@ -64,7 +79,10 @@ export default function OnboardingModal({ open, onClose, initial }: OnboardingMo
     } catch (error) {
       console.error("onboarding/save error:", error);
       setSaving(false);
+      return;
     }
+
+    setSaving(false);
   };
 
   const handleSkip = () => {
@@ -147,6 +165,17 @@ export default function OnboardingModal({ open, onClose, initial }: OnboardingMo
             options={sourceOptions}
             placeholder="Pilih sumber"
           />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Catatan tambahan</label>
+            <textarea
+              className="w-full rounded-lg border border-gray-700 bg-[#0D1117] p-3 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+              rows={3}
+              value={stateOtherNote}
+              onChange={(event) => setStateOtherNote(event.target.value)}
+              placeholder="Boleh diisi jika ada kebutuhan khusus"
+            />
+          </div>
         </form>
 
         <div className="flex items-center justify-between pt-2">
