@@ -22,25 +22,16 @@ export default async function Page({
     redirect(`/${locale}/sign-in?${search.toString()}`);
   }
 
-  const supabase = await supaServer();
-  const { data, error } = await supabase
+  const sb = await supaServer();
+  const { data: profile, error } = await sb
     .from("profiles")
     .select("onboarding_completed,onboarding_answers")
     .eq("user_id", user.id)
-    .maybeSingle();
+    .single();
 
-  let profile = data as ProfileRow | null;
-
-  if (error) {
-    if (error.code === "42703") {
-      const fallback = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
-      if (!fallback.error) {
-        profile = fallback.data as ProfileRow | null;
-      }
-    } else if (error.code !== "42P01") {
-      console.warn("[dashboard] Failed to load onboarding profile", error);
-    }
+  if (error && error.code !== "PGRST116" && error.code !== "42P01") {
+    console.warn("[dashboard] Failed to load onboarding profile", error);
   }
 
-  return <DashboardClient profile={profile ?? { onboarding_completed: false }} />;
+  return <DashboardClient profile={(profile as ProfileRow | null) ?? null} />;
 }

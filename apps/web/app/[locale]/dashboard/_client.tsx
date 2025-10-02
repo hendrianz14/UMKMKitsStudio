@@ -83,10 +83,7 @@ export default function DashboardPage({
     const answers = coerceOnboardingAnswers(initialProfile.onboarding_answers);
     return { ...initialProfile, onboarding_answers: answers ?? null } as ProfileRecord;
   });
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    if (!initialProfile) return true;
-    return initialProfile.onboarding_completed !== true;
-  });
+  const [showOnboarding, setShowOnboarding] = useState(!initialProfile?.onboarding_completed);
   const [showVerificationNotice, setShowVerificationNotice] = useState(false);
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const resolvedLocale = useMemo<Locale>(() => {
@@ -204,6 +201,7 @@ export default function DashboardPage({
             businessType: profile?.onboarding_answers?.business_type ?? "Kuliner",
             source: profile?.onboarding_answers?.ref_source ?? "",
           }}
+          locale={locale}
         />
       ) : null}
       <div className="space-y-10">

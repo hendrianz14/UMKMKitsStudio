@@ -1,5 +1,7 @@
 "use client";
-import React, { useState } from "react";
+
+import { useState } from "react";
+
 import { SelectInput } from "./SelectInput";
 
 type UserType = "Personal" | "Tim";
@@ -19,41 +21,32 @@ export type OnboardingModalProps = {
 export default function OnboardingModal({ open, onClose, initial }: OnboardingModalProps) {
   if (!open) return null;
 
-  const [userType, setUserType] = useState<UserType>(initial?.usage_type === "team" ? "Tim" : "Personal");
-  const [mainPurpose, setMainPurpose] = useState(initial?.mainPurpose ?? "");
-  const [businessType, setBusinessType] = useState(initial?.businessType ?? "Kuliner");
-  const [source, setSource] = useState(initial?.source ?? "");
+  const [stateUserType, setStateUserType] = useState<UserType>(
+    initial?.usage_type === "team" ? "Tim" : "Personal"
+  );
+  const [stateMainPurpose, setStateMainPurpose] = useState(initial?.mainPurpose ?? "");
+  const [stateBusinessType, setStateBusinessType] = useState(initial?.businessType ?? "Kuliner");
+  const [stateSource, setStateSource] = useState(initial?.source ?? "");
 
   const handleSave = async () => {
-    if (!mainPurpose || !businessType.trim() || !source) {
+    if (!stateMainPurpose || !stateBusinessType.trim() || !stateSource) {
       return;
     }
 
-    const payload = {
-      answers: {
-        usage_type: userType === "Tim" ? "team" as const : "personal" as const,
-        purpose: mainPurpose,
-        business_type: businessType,
-        ref_source: source,
-        other_note: undefined,
-      },
-    };
-
-    try {
-      const response = await fetch("/api/profile/onboarding/save", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        return;
-      }
-
-      onClose();
-    } catch {
-      // ignore fetch error so user can retry without closing modal
-    }
+    await fetch("/api/profile/onboarding/save", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        answers: {
+          usage_type: stateUserType === "Tim" ? "team" : "personal",
+          purpose: stateMainPurpose,
+          business_type: stateBusinessType,
+          ref_source: stateSource,
+          other_note: undefined,
+        },
+      }),
+    });
+    onClose();
   };
 
   const handleSkip = () => {
@@ -98,15 +91,15 @@ export default function OnboardingModal({ open, onClose, initial }: OnboardingMo
             <div className="grid grid-cols-2 gap-2 p-1 bg-[#21262D] rounded-lg">
               <button
                 type="button"
-                onClick={() => setUserType("Personal")}
-                className={`w-full py-2.5 rounded-md text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#21262D] focus:ring-blue-500 ${userType === "Personal" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700/50"}`}
+                onClick={() => setStateUserType("Personal")}
+                className={`w-full py-2.5 rounded-md text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#21262D] focus:ring-blue-500 ${stateUserType === "Personal" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700/50"}`}
               >
                 Personal
               </button>
               <button
                 type="button"
-                onClick={() => setUserType("Tim")}
-                className={`w-full py-2.5 rounded-md text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#21262D] focus:ring-blue-500 ${userType === "Tim" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700/50"}`}
+                onClick={() => setStateUserType("Tim")}
+                className={`w-full py-2.5 rounded-md text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#21262D] focus:ring-blue-500 ${stateUserType === "Tim" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700/50"}`}
               >
                 Tim
               </button>
@@ -115,23 +108,23 @@ export default function OnboardingModal({ open, onClose, initial }: OnboardingMo
 
           <SelectInput
             label="Tujuan utama pakai UMKM Kits"
-            value={mainPurpose}
-            onChange={(e) => setMainPurpose(e.target.value)}
+            value={stateMainPurpose}
+            onChange={(e) => setStateMainPurpose(e.target.value)}
             options={purposeOptions}
             placeholder="Pilih tujuan utama"
           />
 
           <SelectInput
             label="Jenis usaha"
-            value={businessType}
-            onChange={(e) => setBusinessType(e.target.value)}
+            value={stateBusinessType}
+            onChange={(e) => setStateBusinessType(e.target.value)}
             options={businessTypeOptions}
           />
 
           <SelectInput
             label="Dari mana tahu UMKM Kits Studio?"
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
+            value={stateSource}
+            onChange={(e) => setStateSource(e.target.value)}
             options={sourceOptions}
             placeholder="Pilih sumber"
           />
