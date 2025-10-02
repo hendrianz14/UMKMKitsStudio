@@ -25,14 +25,17 @@ interface JobItem {
 
 interface ProfileRecord {
   onboarding_completed?: boolean | null;
-  onboarding_type?: OnboardingAnswers["userType"] | null;
-  onboarding_purpose?: string | null;
-  onboarding_industry?: string | null;
-  onboarding_source?: string | null;
+  onboarding_answers?: OnboardingAnswers | null;
   verification_pending?: boolean | null;
   verified_at?: string | null;
   credits?: number | null;
 }
+
+type DashboardProfileInput =
+  | (Partial<Omit<ProfileRecord, "onboarding_answers">> & {
+      onboarding_answers?: Record<string, unknown> | null;
+    })
+  | null;
 
 const CREDIT_COST: Record<string, number> = {
   caption: 1,
@@ -41,7 +44,11 @@ const CREDIT_COST: Record<string, number> = {
   img2video: 30
 };
 
-export default function DashboardPage() {
+export default function DashboardPage({
+  profile: initialProfile,
+}: {
+  profile?: DashboardProfileInput;
+}) {
   const router = useRouter();
   const { locale } = useParams<{ locale: string }>();
   const searchParams = useSearchParams();
@@ -50,8 +57,18 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const credits = 320;
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [profile, setProfile] = useState<ProfileRecord | null>(null);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [profile, setProfile] = useState<ProfileRecord | null>(() => {
+    if (!initialProfile) return null;
+    const answers =
+      initialProfile.onboarding_answers != null
+        ? ((initialProfile.onboarding_answers as unknown) as OnboardingAnswers | null)
+        : null;
+    return { ...initialProfile, onboarding_answers: answers } as ProfileRecord;
+  });
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => {
+    if (!initialProfile) return true;
+    return initialProfile.onboarding_completed !== true;
+  });
   const [dismissedOnboarding, setDismissedOnboarding] = useState(false);
   const [showVerificationNotice, setShowVerificationNotice] = useState(false);
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
@@ -71,15 +88,26 @@ export default function DashboardPage() {
     try {
       const { data, error: profileError } = await supabase
         .from("profiles")
-        .select(
-          "onboarding_completed,onboarding_type,onboarding_purpose,onboarding_industry,onboarding_source,verification_pending,verified_at,credits"
-        )
+        .select("onboarding_completed,onboarding_answers,verification_pending,verified_at,credits")
         .eq("user_id", user.id)
         .maybeSingle();
       if (profileError && profileError.code !== "42P01") {
         console.error("[dashboard] Gagal memuat profil", profileError);
       }
-      setProfile(data ?? null);
+      const payload = (data ?? null) as ProfileRecord | null;
+      const nextProfile = payload
+        ? ({
+            ...payload,
+            onboarding_answers:
+              payload.onboarding_answers != null
+                ? ((payload.onboarding_answers as unknown) as OnboardingAnswers | null)
+                : null,
+          } as ProfileRecord)
+        : null;
+      setProfile((prev) => {
+        if (!nextProfile) return nextProfile;
+        return { ...(prev ?? {}), ...nextProfile } as ProfileRecord;
+      });
     } catch (profileError) {
       console.error("[dashboard] Kesalahan tak terduga memuat profil", profileError);
     }
@@ -130,25 +158,14 @@ export default function DashboardPage() {
     void fetchProfile();
   }, [fetchProfile]);
 
-  const onboardingDefaults = useMemo<OnboardingAnswers | undefined>(() => {
-    if (!profile) return undefined;
-    const onboarding = {
-      type: profile.onboarding_type,
-      purpose: profile.onboarding_purpose ?? undefined,
-      industry: profile.onboarding_industry ?? undefined,
-      source: profile.onboarding_source ?? undefined,
-    };
-    if (!onboarding) return undefined;
-    return {
-      userType: onboarding.type === "team" ? "team" : "personal",
-      goal: onboarding.purpose ?? "",
-      businessType: onboarding.industry ?? "",
-      source: onboarding.source ?? "",
-    };
+  const onboardingDefaults = useMemo<Partial<OnboardingAnswers> | undefined>(() => {
+    return profile?.onboarding_answers ?? undefined;
   }, [profile]);
 
   const shouldPromptOnboarding = useMemo(() => {
-    return Boolean(user && profile && profile.onboarding_completed !== true);
+    if (!user) return false;
+    if (!profile) return true;
+    return profile.onboarding_completed !== true;
   }, [profile, user]);
 
   useEffect(() => {
@@ -169,30 +186,34 @@ export default function DashboardPage() {
   }, [dashboardPath, router, searchParams]);
 
   const handleOnboardingSave = async (answers: OnboardingAnswers) => {
-    if (!user) return;
     try {
-      const { error: upsertError } = await supabase
-        .from("profiles")
-        .upsert(
-          {
-            user_id: user.id,
-            onboarding_completed: true,
-            onboarding_type: answers.userType,
-            onboarding_purpose: answers.goal,
-            onboarding_industry: answers.businessType,
-            onboarding_source: answers.source,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" }
-        );
-      if (upsertError && upsertError.code !== "42P01") {
-        throw upsertError;
+      const response = await fetch("/api/profile/onboarding/save", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ answers }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        const message = typeof payload?.error === "string" ? payload.error : "Gagal menyimpan jawaban.";
+        throw new Error(message);
       }
+
+      setProfile((prev) =>
+        ({
+          ...(prev ?? {}),
+          onboarding_completed: true,
+          onboarding_answers: answers,
+        } as ProfileRecord)
+      );
       setIsOnboardingOpen(false);
       setDismissedOnboarding(false);
-      await fetchProfile();
     } catch (upsertError) {
       console.error("[dashboard] Gagal menyimpan onboarding", upsertError);
+      if (upsertError instanceof Error) {
+        throw upsertError;
+      }
+      throw new Error("Gagal menyimpan jawaban.");
     }
   };
 

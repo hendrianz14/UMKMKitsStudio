@@ -16,3 +16,8 @@ create table if not exists public.email_otps (
 create index if not exists email_otps_email_idx on public.email_otps (email);
 create index if not exists email_otps_consumed_idx on public.email_otps (consumed);
 create index if not exists email_otps_expires_at_idx on public.email_otps (expires_at);
+
+alter table if exists public.profiles
+  add column if not exists onboarding_completed boolean not null default false,
+  add column if not exists onboarding_answers jsonb,
+  add column if not exists onboarding_updated_at timestamptz;

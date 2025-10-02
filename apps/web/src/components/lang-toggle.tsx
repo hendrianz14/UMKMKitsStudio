@@ -32,7 +32,7 @@ function buildTargetHref(pathname: string | null | undefined, locale: Locale) {
       case 'editor':
         return href('/[locale]/editor', locale);
       case 'onboarding':
-        return href('/[locale]/onboarding', locale);
+        return href('/[locale]/dashboard', locale);
       case 'gallery':
         return href('/[locale]/gallery', locale);
       case 'forgot-password':

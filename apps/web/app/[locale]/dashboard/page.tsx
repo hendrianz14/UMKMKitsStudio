@@ -6,6 +6,11 @@ import DashboardClient from "./_client";
 
 export const dynamic = "force-dynamic";
 
+type ProfileRow = {
+  onboarding_completed?: boolean | null;
+  onboarding_answers?: Record<string, unknown> | null;
+};
+
 export default async function Page({
   params,
 }: {
@@ -20,36 +25,24 @@ export default async function Page({
   }
 
   const supabase = await supaServer();
-  const columns = "onboarding_completed,has_onboarded,onboarding";
   const { data, error } = await supabase
     .from("profiles")
-    .select(columns)
+    .select("onboarding_completed,onboarding_answers")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  let profile = data as
-    | ({ onboarding_completed?: boolean | null; has_onboarded?: boolean | null; onboarding?: boolean | null } | null)
-    | null;
+  let profile = data as ProfileRow | null;
 
   if (error) {
     if (error.code === "42703") {
       const fallback = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
       if (!fallback.error) {
-        profile = fallback.data as typeof profile;
+        profile = fallback.data as ProfileRow | null;
       }
     } else if (error.code !== "42P01") {
       console.warn("[dashboard] Failed to load onboarding profile", error);
     }
   }
 
-  const completed = Boolean(
-    profile &&
-      (profile.onboarding_completed === true || profile.has_onboarded === true || profile.onboarding === true)
-  );
-
-  if (!completed) {
-    redirect(path("/[locale]/onboarding", locale));
-  }
-
-  return <DashboardClient />;
+  return <DashboardClient profile={profile ?? { onboarding_completed: false }} />;
 }
