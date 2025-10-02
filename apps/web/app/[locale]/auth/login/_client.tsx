@@ -10,7 +10,7 @@ import { EmailField, PasswordField } from "@/components/auth/AuthFormParts";
 import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { supaBrowser } from "@/lib/supabase-browser";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { href, path } from "@/lib/locale-nav";
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
 
@@ -54,7 +54,8 @@ export default function SignInPage() {
 
   useEffect(() => {
     try {
-      supaBrowser();
+      // supabaseBrowser accessed to ensure environment variables exist
+      void supabaseBrowser;
     } catch (err) {
       if (typeof window !== "undefined") {
         console.error("[sign-in] Supabase config error", err);
@@ -94,7 +95,7 @@ export default function SignInPage() {
         return;
       }
 
-      const supabase = supaBrowser();
+      const supabase = supabaseBrowser;
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: emailNormalized,
         password,
@@ -132,7 +133,7 @@ export default function SignInPage() {
       }
 
       const nextPath = `/${resolvedLocale}/dashboard`;
-      const { error: oauthError } = await supaBrowser().auth.signInWithOAuth({
+      const { error: oauthError } = await supabaseBrowser.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/${resolvedLocale}/auth/callback?next=${encodeURIComponent(

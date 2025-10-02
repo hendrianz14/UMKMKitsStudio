@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 
-import { supaBrowser } from "@/lib/supabase-browser";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { path } from "@/lib/locale-nav";
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
 
@@ -31,7 +31,7 @@ export default function UpdatePasswordClient() {
   }, [search]);
 
   const submit = async () => {
-    const sb = supaBrowser();
+    const sb = supabaseBrowser;
     setMsg("Menyimpan...");
     const { error } = await sb.auth.updateUser({ password });
     if (error) {

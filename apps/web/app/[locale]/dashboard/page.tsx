@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import type { Route } from "next";
 import { supaServer } from "@/lib/supabase-clients";
 
+import OnlyClient from "@/components/_utils/OnlyClient";
+
 import DashboardClient from "./DashboardClient";
 
 type ProfileRow = {
@@ -80,14 +82,16 @@ export default async function Page({
     .limit(12);
 
   return (
-    <DashboardClient
-      locale={locale}
-      userId={user.id}
-      profile={profile}
-      jobsThisWeek={jobsThisWeek ?? 0}
-      totalUsed={totalUsed}
-      history={(history ?? []) as CreditTx[]}
-      projects={(projects ?? []) as ProjectRow[]}
-    />
+    <OnlyClient>
+      <DashboardClient
+        locale={locale}
+        userId={user.id}
+        profile={profile}
+        jobsThisWeek={jobsThisWeek ?? 0}
+        totalUsed={totalUsed}
+        history={(history ?? []) as CreditTx[]}
+        projects={(projects ?? []) as ProjectRow[]}
+      />
+    </OnlyClient>
   );
 }

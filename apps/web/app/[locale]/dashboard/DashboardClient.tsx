@@ -1,17 +1,12 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-import { supaBrowser } from "@/lib/supabase-clients";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
 
 const placeholderCover = "/images/dashboard-placeholder.svg";
@@ -72,7 +67,7 @@ export default function DashboardClient({
   projects: Project[];
   userId: string;
 }) {
-  const sb = useMemo(() => supaBrowser(), []);
+  const sb = supabaseBrowser;
   const [profile, setProfile] = useState<Profile>(initialProfile);
   const [jobsThisWeek] = useState(initialJobs);
   const [totalUsed, setTotalUsed] = useState(initialUsed);

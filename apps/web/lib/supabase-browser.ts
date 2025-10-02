@@ -1,29 +1,27 @@
-import { createBrowserClient } from "@supabase/ssr";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-type TypedSupabaseClient = SupabaseClient<any, any, any, any, any>;
-
-export type SupabaseBrowserClient = TypedSupabaseClient;
-
-let _client: TypedSupabaseClient | null = null;
-
-export function supaBrowser(): TypedSupabaseClient {
-  if (_client) return _client;
-  _client = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        flowType: "pkce",
-        persistSession: true,
-        detectSessionInUrl: true,
-        autoRefreshToken: true,
-      },
-    }
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+if (!url || !anon) {
+  throw new Error(
+    "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY"
   );
-  return _client;
 }
 
-export function resetSupaBrowserClient() {
-  _client = null;
+declare global {
+  // eslint-disable-next-line no-var
+  var __kitstudio_supabase__: SupabaseClient | undefined;
 }
+
+export const supabaseBrowser: SupabaseClient =
+  globalThis.__kitstudio_supabase__ ??
+  (globalThis.__kitstudio_supabase__ = createClient(url, anon, {
+    auth: {
+      persistSession: true,
+      storageKey: "kitstudio-auth",
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  }));
+
+export type SupabaseBrowserClient = SupabaseClient;
