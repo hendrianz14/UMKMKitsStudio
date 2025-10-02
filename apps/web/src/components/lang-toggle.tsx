@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
+
+import { href } from '@/lib/locale-nav';
 import { Button } from '@/components/ui/button';
 import { defaultLocale, isValidLocale, type Locale } from '@/lib/i18n';
 
@@ -20,27 +22,27 @@ function buildTargetHref(pathname: string | null | undefined, locale: Locale) {
   const rest = hasLocale ? segments.slice(1) : segments;
 
   if (rest.length === 0) {
-    return { pathname: '/[locale]', params: { locale } } as const;
+    return href('/[locale]', locale);
   }
 
   if (rest.length === 1) {
     switch (rest[0]) {
       case 'dashboard':
-        return { pathname: '/[locale]/dashboard', params: { locale } } as const;
+        return href('/[locale]/dashboard', locale);
       case 'editor':
-        return { pathname: '/[locale]/editor', params: { locale } } as const;
+        return href('/[locale]/editor', locale);
       case 'onboarding':
-        return { pathname: '/[locale]/onboarding', params: { locale } } as const;
+        return href('/[locale]/onboarding', locale);
       case 'gallery':
-        return { pathname: '/[locale]/gallery', params: { locale } } as const;
+        return href('/[locale]/gallery', locale);
       case 'forgot-password':
-        return { pathname: '/[locale]/forgot-password', params: { locale } } as const;
+        return href('/[locale]/forgot-password', locale);
       case 'sign-in':
-        return { pathname: '/[locale]/sign-in', params: { locale } } as const;
+        return href('/[locale]/sign-in', locale);
       case 'sign-up':
-        return { pathname: '/[locale]/sign-up', params: { locale } } as const;
+        return href('/[locale]/sign-up', locale);
       default:
-        return { pathname: '/[locale]', params: { locale } } as const;
+        return href('/[locale]', locale);
     }
   }
 
@@ -48,17 +50,17 @@ function buildTargetHref(pathname: string | null | undefined, locale: Locale) {
     const segment = rest[1];
     switch (segment) {
       case 'callback':
-        return { pathname: '/[locale]/auth/callback', params: { locale } } as const;
+        return href('/[locale]/auth/callback', locale);
       case 'action':
-        return { pathname: '/[locale]/auth/action', params: { locale } } as const;
+        return href('/[locale]/auth/action', locale);
       case 'update-password':
-        return { pathname: '/[locale]/auth/update-password', params: { locale } } as const;
+        return href('/[locale]/auth/update-password', locale);
       default:
-        return { pathname: '/[locale]/auth/callback', params: { locale } } as const;
+        return href('/[locale]/auth/callback', locale);
     }
   }
 
-  return { pathname: '/[locale]', params: { locale } } as const;
+  return href('/[locale]', locale);
 }
 
 export function LangToggle() {

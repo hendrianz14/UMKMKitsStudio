@@ -9,6 +9,7 @@ import { EmailField } from "@/components/auth/AuthFormParts";
 import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { href } from "@/lib/locale-nav";
 import { clientEnvFlags } from "@/lib/env-flags-client";
 import {
   collectMissingSupabaseEnvKeys,
@@ -25,10 +26,7 @@ export default function ForgotPasswordPage() {
     }
     return defaultLocale;
   }, [locale]);
-  const loginHref = useMemo(
-    () => ({ pathname: "/[locale]/sign-in", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
+  const loginHref = useMemo(() => href("/[locale]/sign-in", resolvedLocale), [resolvedLocale]);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -9,9 +9,8 @@ import { Button } from '@/components/ui/button';
 import { CardX } from '@/components/ui/cardx';
 import { Input } from '@/components/ui/input';
 import { CreditBadge } from '@/components/credit-badge';
+import { path } from '@/lib/locale-nav';
 import { defaultLocale, isValidLocale, type Locale } from '@/lib/i18n';
-
-type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -26,10 +25,7 @@ export default function OnboardingPage() {
     }
     return defaultLocale;
   }, [locale]);
-  const dashboardHref = useMemo(
-    () => ({ pathname: '/[locale]/dashboard', params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
+  const dashboardPath = useMemo(() => path('/[locale]/dashboard', resolvedLocale), [resolvedLocale]);
 
   const handleComplete = useCallback(async () => {
     if (saving) return;
@@ -39,12 +35,12 @@ export default function OnboardingPage() {
       if (!response.ok) {
         throw new Error('Failed to complete onboarding');
       }
-      router.replace(dashboardHref as unknown as RouterReplaceArg);
+      router.replace(dashboardPath);
     } catch (error) {
       console.error('[onboarding] Failed to complete onboarding', error);
       setSaving(false);
     }
-  }, [dashboardHref, router, saving]);
+  }, [dashboardPath, router, saving]);
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">

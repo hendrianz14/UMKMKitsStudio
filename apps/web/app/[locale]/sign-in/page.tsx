@@ -1,9 +1,9 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import type { Route } from "next";
 
 import { getServerUser } from "@/lib/supabase-server-ssr";
+import { path } from "@/lib/locale-nav";
 import SignInClient from "../auth/login/_client";
 
 export default async function Page({
@@ -19,11 +19,8 @@ export default async function Page({
 
   if (user) {
     const redirectParam = search?.redirect;
-    const fallback = (`/${locale}/dashboard`) as Route;
-    const destination =
-      redirectParam && redirectParam.startsWith("/")
-        ? (redirectParam as Route)
-        : fallback;
+    const fallback = path("/[locale]/dashboard", locale);
+    const destination = redirectParam && redirectParam.startsWith("/") ? redirectParam : fallback;
 
     redirect(destination);
   }

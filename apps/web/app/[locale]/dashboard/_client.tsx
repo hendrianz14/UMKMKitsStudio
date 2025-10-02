@@ -12,10 +12,9 @@ import { Button } from "@/components/ui/button";
 import { CardX, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UploadDropzone } from "@/components/upload-dropzone";
+import { path } from "@/lib/locale-nav";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
-
-type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
 
 interface JobItem {
   id: string;
@@ -62,10 +61,7 @@ export default function DashboardPage() {
     }
     return defaultLocale;
   }, [locale]);
-  const dashboardHref = useMemo(
-    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
+  const dashboardPath = useMemo(() => path("/[locale]/dashboard", resolvedLocale), [resolvedLocale]);
 
   const fetchProfile = useCallback(async () => {
     if (!user) {
@@ -168,9 +164,9 @@ export default function DashboardPage() {
     const flag = searchParams?.get("verification");
     if (flag === "check-email") {
       setShowVerificationNotice(true);
-      router.replace(dashboardHref as unknown as RouterReplaceArg, { scroll: false });
+      router.replace(dashboardPath, { scroll: false });
     }
-  }, [dashboardHref, router, searchParams]);
+  }, [dashboardPath, router, searchParams]);
 
   const handleOnboardingSave = async (answers: OnboardingAnswers) => {
     if (!user) return;

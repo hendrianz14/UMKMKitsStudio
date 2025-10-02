@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+
 import {
   BeforeAfterNoSSR,
   FeatureGridNoSSR,
@@ -9,13 +10,14 @@ import {
 } from '@/components/no-ssr';
 import { SectionHeading } from '@/components/SectionHeading';
 import { Button } from '@/components/ui/button';
+import { href } from '@/lib/locale-nav';
 import { defaultLocale, isValidLocale, type Locale } from '@/lib/i18n';
 
 export default async function LocaleLanding({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale: Locale = isValidLocale(rawLocale) ? (rawLocale as Locale) : defaultLocale;
-  const signUpHref = { pathname: '/[locale]/sign-up', params: { locale } } as const;
-  const editorHref = { pathname: '/[locale]/editor', params: { locale } } as const;
+  const signUpHref = href('/[locale]/sign-up', locale);
+  const editorHref = href('/[locale]/editor', locale);
   const t = await getTranslations({ locale, namespace: 'common' });
 
   return (

@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supaBrowser } from "@/lib/supabase-browser";
+import { href, path } from "@/lib/locale-nav";
 import { isAllowedGmail, isValidEmailFormat, normalizeEmail } from "@/lib/email";
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
 
@@ -93,14 +94,8 @@ export default function SignUpPage() {
     }
     return defaultLocale;
   }, [locale]);
-  const dashboardHref = useMemo(
-    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
-  const signInHref = useMemo(
-    () => ({ pathname: "/[locale]/sign-in", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
+  const dashboardPath = useMemo(() => path("/[locale]/dashboard", resolvedLocale), [resolvedLocale]);
+  const signInHref = useMemo(() => href("/[locale]/sign-in", resolvedLocale), [resolvedLocale]);
 
   const handleSendCode = useCallback(async () => {
     if (sendingCode || countdown > 0) return;
@@ -252,7 +247,7 @@ export default function SignUpPage() {
           return;
         }
 
-        router.replace(dashboardHref as unknown as RouterReplaceArg);
+        router.replace(dashboardPath);
       } catch (err) {
         if (typeof window !== "undefined") {
           console.error("[sign-up] Register error", err);
@@ -267,7 +262,7 @@ export default function SignUpPage() {
         setLoading(false);
       }
     },
-    [configError, dashboardHref, email, name, otpCode, otpSent, password, passwordValid, router]
+    [configError, dashboardPath, email, name, otpCode, otpSent, password, passwordValid, router]
   );
 
   const handleGoogleSignIn = useCallback(async () => {
@@ -469,4 +464,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];

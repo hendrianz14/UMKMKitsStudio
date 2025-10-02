@@ -3,10 +3,10 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { supaBrowser } from "@/lib/supabase-browser";
+import { path } from "@/lib/locale-nav";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Route } from "next";
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
-
-type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
 
 export const dynamic = "force-dynamic"; // client-only, no prerender
 
@@ -50,7 +50,7 @@ function CallbackInner() {
       }
 
       if (!session) {
-        router.replace({ pathname: "/[locale]/sign-in", params: { locale } } as unknown as RouterReplaceArg);
+        router.replace(path("/[locale]/sign-in", locale));
         return;
       }
 
@@ -77,11 +77,11 @@ function CallbackInner() {
       // Tentukan target redirect
       const nextRaw = search.get("next");
       if (nextRaw && nextRaw.startsWith("/")) {
-        router.replace(nextRaw as unknown as RouterReplaceArg);
+        router.replace(nextRaw as Route);
         return;
       }
 
-      router.replace({ pathname: "/[locale]/dashboard", params: { locale } } as unknown as RouterReplaceArg);
+        router.replace(path("/[locale]/dashboard", locale));
   })();
   }, [router, search, params, locale]);
 

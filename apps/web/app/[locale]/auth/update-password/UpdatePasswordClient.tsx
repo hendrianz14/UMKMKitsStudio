@@ -4,9 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 
 import { supaBrowser } from "@/lib/supabase-browser";
+import { path } from "@/lib/locale-nav";
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
-
-type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
 
 export default function UpdatePasswordClient() {
   const params = useParams<{ locale?: string }>();
@@ -24,6 +23,8 @@ export default function UpdatePasswordClient() {
     return defaultLocale;
   }, [params?.locale]);
 
+  const signInPath = useMemo(() => path("/[locale]/sign-in", resolvedLocale), [resolvedLocale]);
+
   useEffect(() => {
     if (once.current) return;
     once.current = true;
@@ -38,11 +39,7 @@ export default function UpdatePasswordClient() {
       return;
     }
     setMsg("Berhasil. Mengarahkan...");
-    router.replace({
-      pathname: "/[locale]/sign-in",
-      params: { locale: resolvedLocale },
-      query: { reset: "ok" },
-    } as unknown as RouterReplaceArg);
+    router.replace(`${signInPath}?reset=ok`);
   };
 
   return (

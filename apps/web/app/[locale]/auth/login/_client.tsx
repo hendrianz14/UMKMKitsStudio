@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { CardX, CardXFooter, CardXHeader } from "@/components/ui/cardx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supaBrowser } from "@/lib/supabase-browser";
+import { href, path } from "@/lib/locale-nav";
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
 
 const GoogleIcon = () => (
@@ -72,18 +73,9 @@ export default function SignInPage() {
     }
     return defaultLocale;
   }, [locale]);
-  const dashboardHref = useMemo(
-    () => ({ pathname: "/[locale]/dashboard", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
-  const forgotPasswordHref = useMemo(
-    () => ({ pathname: "/[locale]/forgot-password", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
-  const signUpHref = useMemo(
-    () => ({ pathname: "/[locale]/sign-up", params: { locale: resolvedLocale } }) as const,
-    [resolvedLocale]
-  );
+  const dashboardPath = useMemo(() => path("/[locale]/dashboard", resolvedLocale), [resolvedLocale]);
+  const forgotPasswordHref = useMemo(() => href("/[locale]/forgot-password", resolvedLocale), [resolvedLocale]);
+  const signUpHref = useMemo(() => href("/[locale]/sign-up", resolvedLocale), [resolvedLocale]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -111,7 +103,7 @@ export default function SignInPage() {
         setError(signInError.message || "Kredensial tidak valid.");
         return;
       }
-      router.replace(dashboardHref as unknown as RouterReplaceArg);
+      router.replace(dashboardPath);
     } catch (err) {
       if (typeof window !== "undefined") {
         console.error("[sign-in] Login error", err);
@@ -277,4 +269,3 @@ export default function SignInPage() {
     </div>
   );
 }
-type RouterReplaceArg = Parameters<ReturnType<typeof useRouter>["replace"]>[0];
