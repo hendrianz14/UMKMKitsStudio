@@ -1,16 +1,10 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
 import "sonner/dist/styles.css";
-
-const fontSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
+import { fontSans } from "@/styles/fonts";
 
 export const metadata: Metadata = {
   title: "UMKM Kits Studio",
