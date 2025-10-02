@@ -11,7 +11,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
+const [showOnboarding, setShowOnboarding] = useState(!profile?.onboarding_completed);
 
+useEffect(() => {
+  setShowOnboarding(!profile?.onboarding_completed);
+}, [profile?.onboarding_completed]);
+
+{showOnboarding && (
+  <OnboardingModal
+    open
+    onClose={() => setShowOnboarding(false)}
+    initial={{
+      usage_type: profile?.onboarding_answers?.usage_type,
+      mainPurpose: profile?.onboarding_answers?.purpose,
+      businessType: profile?.onboarding_answers?.business_type,
+      source: profile?.onboarding_answers?.ref_source,
+    }}
+  />
+)}
 const placeholderCover = "/images/dashboard-placeholder.svg";
 
 function supaBrowser() {
