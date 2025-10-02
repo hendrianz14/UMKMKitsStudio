@@ -22,20 +22,21 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface OnboardingAnswers {
-  userType: "personal" | "team";
-  goal: string;
-  businessType: string;
-  source: string;
+  usage_type: "personal" | "team";
+  purpose: string;
+  business_type: string;
+  ref_source: "friend" | "search" | "ad" | "other";
+  other_note?: string;
 }
 
 interface OnboardingModalProps {
   open: boolean;
   defaultValues?: Partial<OnboardingAnswers>;
   onSave: (answers: OnboardingAnswers) => Promise<void>;
-  onSkip: () => Promise<void>;
+  onSkip: () => Promise<void> | void;
 }
 
-const USER_TYPES: Array<{ value: OnboardingAnswers["userType"]; label: string }> = [
+const USER_TYPES: Array<{ value: OnboardingAnswers["usage_type"]; label: string }> = [
   { value: "personal", label: "Personal" },
   { value: "team", label: "Tim" },
 ];
@@ -56,25 +57,29 @@ const BUSINESS_TYPES = [
   "Elektronik",
 ];
 
-const SOURCES = [
-  "Teman",
-  "TikTok",
-  "Instagram",
-  "Google",
-  "Lainnya",
+const SOURCE_OPTIONS: Array<{ value: OnboardingAnswers["ref_source"]; label: string }> = [
+  { value: "friend", label: "Teman" },
+  { value: "search", label: "Pencarian (Google, dsb.)" },
+  { value: "ad", label: "Iklan" },
+  { value: "other", label: "Lainnya" },
 ];
 
 export function OnboardingModal({ open, defaultValues, onSave, onSkip }: OnboardingModalProps) {
-  const [type, setType] = useState<string>(defaultValues?.userType ?? "personal");
-  const [purpose, setPurpose] = useState<string>(defaultValues?.goal ?? "");
-  const [industry, setIndustry] = useState<string>(defaultValues?.businessType ?? "");
-  const [source, setSource] = useState<string>(defaultValues?.source ?? "");
+  const [usageType, setUsageType] = useState<OnboardingAnswers["usage_type"]>(
+    defaultValues?.usage_type ?? "personal"
+  );
+  const [purpose, setPurpose] = useState<string>(defaultValues?.purpose ?? "");
+  const [industry, setIndustry] = useState<string>(defaultValues?.business_type ?? "");
+  const [source, setSource] = useState<OnboardingAnswers["ref_source"] | "">(
+    defaultValues?.ref_source ?? ""
+  );
+  const [otherNote, setOtherNote] = useState<string>(defaultValues?.other_note ?? "");
   const [status, setStatus] = useState<"idle" | "saving" | "skipping">("idle");
   const [error, setError] = useState<string | null>(null);
 
   const isValid = useMemo(() => {
-    return Boolean(purpose && industry.trim());
-  }, [purpose, industry]);
+    return Boolean(purpose && industry.trim() && source);
+  }, [purpose, industry, source]);
 
   useEffect(() => {
     if (!open) return;
@@ -86,10 +91,11 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
       return match ? match.value : value;
     };
 
-    setType(defaultValues?.userType ?? "personal");
-    setPurpose(resolvePurpose(defaultValues?.goal));
-    setIndustry(defaultValues?.businessType ?? "");
-    setSource(defaultValues?.source ?? "");
+    setUsageType(defaultValues?.usage_type ?? "personal");
+    setPurpose(resolvePurpose(defaultValues?.purpose));
+    setIndustry(defaultValues?.business_type ?? "");
+    setSource(defaultValues?.ref_source ?? "");
+    setOtherNote(defaultValues?.other_note ?? "");
     setError(null);
   }, [defaultValues, open]);
 
@@ -102,11 +108,13 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
     setStatus("saving");
     setError(null);
     try {
+      const trimmedOther = otherNote.trim();
       await onSave({
-        userType: type === "team" ? "team" : "personal",
-        goal: purpose,
-        businessType: industry.trim(),
-        source,
+        usage_type: usageType === "team" ? "team" : "personal",
+        purpose,
+        business_type: industry.trim(),
+        ref_source: source as OnboardingAnswers["ref_source"],
+        other_note: trimmedOther ? trimmedOther : undefined,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menyimpan jawaban.");
@@ -144,11 +152,11 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
                 <Button
                   key={option.value}
                   type="button"
-                  variant={type === option.value ? "primary" : "secondary"}
-                  onClick={() => setType(option.value)}
+                  variant={usageType === option.value ? "primary" : "secondary"}
+                  onClick={() => setUsageType(option.value)}
                   className={cn(
                     "flex-1 border border-border/60",
-                    type === option.value ? "shadow-glow" : "bg-background/40"
+                    usageType === option.value ? "shadow-glow" : "bg-background/40"
                   )}
                 >
                   {option.label}
@@ -190,19 +198,33 @@ export function OnboardingModal({ open, defaultValues, onSave, onSkip }: Onboard
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">Dari mana tahu UMKM Kits Studio?</p>
-            <Select value={source} onValueChange={setSource}>
+            <Select
+              value={source || undefined}
+              onValueChange={(value) => setSource(value as OnboardingAnswers["ref_source"])}
+            >
               <SelectTrigger className="text-white placeholder:text-muted-foreground">
                 <SelectValue placeholder="Pilih sumber" />
               </SelectTrigger>
               <SelectContent className="text-foreground">
-                {SOURCES.map((item) => (
-                  <SelectItem key={item} value={item} className="text-foreground">
-                    {item}
+                {SOURCE_OPTIONS.map((item) => (
+                  <SelectItem key={item.value} value={item.value} className="text-foreground">
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+          {source === "other" ? (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-foreground">Ceritakan lebih lanjut (opsional)</p>
+              <Input
+                value={otherNote}
+                onChange={(event) => setOtherNote(event.target.value)}
+                placeholder="Tulis detail tambahan"
+                className="text-white placeholder:text-muted-foreground"
+              />
+            </div>
+          ) : null}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">

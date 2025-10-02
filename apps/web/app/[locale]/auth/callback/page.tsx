@@ -81,8 +81,8 @@ function CallbackInner() {
         return;
       }
 
-        router.replace(path("/[locale]/dashboard", locale));
-  })();
+      router.replace(path("/[locale]/dashboard", locale));
+    })();
   }, [router, search, params, locale]);
 
   return (
