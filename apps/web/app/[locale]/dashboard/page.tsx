@@ -1,14 +1,34 @@
 import { redirect } from "next/navigation";
+import type { Route } from "next";
 
-import { getServerUser, supaServer } from "@/lib/supabase-server-ssr";
-import DashboardClient from "./_client";
+import { supaServer } from "@/lib/supabase-server-ssr";
 
-export const dynamic = "force-dynamic";
+import DashboardClient from "./DashboardClient";
 
 type ProfileRow = {
-  onboarding_completed?: boolean | null;
-  onboarding_answers?: Record<string, unknown> | null;
+  plan: string | null;
+  plan_expires_at: string | null;
+  credits: number | null;
+  trial_credits: number | null;
+  trial_expires_at: string | null;
+  full_name: string | null;
 };
+
+type CreditTransactionRow = {
+  id: string;
+  amount: number;
+  reason: string;
+  created_at: string;
+};
+
+type ProjectRow = {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  updated_at: string;
+};
+
+export const dynamic = "force-dynamic";
 
 export default async function Page({
   params,
@@ -16,22 +36,66 @@ export default async function Page({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const user = await getServerUser();
-  if (!user) {
-    const search = new URLSearchParams({ redirect: `/${locale}/dashboard` });
-    redirect(`/${locale}/sign-in?${search.toString()}`);
-  }
-
   const sb = await supaServer();
-  const { data: profile, error } = await sb
-    .from("profiles")
-    .select("onboarding_completed,onboarding_answers")
-    .eq("user_id", user.id)
-    .single();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
 
-  if (error && error.code !== "PGRST116" && error.code !== "42P01") {
-    console.warn("[dashboard] Failed to load onboarding profile", error);
+  if (!user) {
+    const redirectPath = (`/${locale}/sign-in?redirect=/${locale}/dashboard` as unknown) as Route;
+    redirect(redirectPath);
   }
 
-  return <DashboardClient profile={(profile as ProfileRow | null) ?? null} />;
+  const { data: profileRaw } = await sb
+    .from("profiles")
+    .select("plan, plan_expires_at, credits, trial_credits, trial_expires_at, full_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const profile = (profileRaw ?? null) as ProfileRow | null;
+
+  const monday = new Date();
+  monday.setHours(0, 0, 0, 0);
+  const day = monday.getDay();
+  const diff = (day + 6) % 7;
+  monday.setDate(monday.getDate() - diff);
+
+  const { count: jobsCount } = await sb
+    .from("ai_jobs")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", monday.toISOString())
+    .eq("user_id", user.id);
+
+  const { data: txUsedRows } = await sb
+    .from("credit_transactions")
+    .select("amount")
+    .eq("user_id", user.id)
+    .lt("amount", 0);
+
+  const totalUsed = (txUsedRows ?? []).reduce<number>((sum, row) => sum + Math.abs(row.amount), 0);
+
+  const { data: history } = await sb
+    .from("credit_transactions")
+    .select("id, amount, reason, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  const { data: projects } = await sb
+    .from("projects")
+    .select("id, title, cover_url, updated_at")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false })
+    .limit(3);
+
+  return (
+    <DashboardClient
+      locale={locale}
+      profile={profile}
+      jobsThisWeek={jobsCount ?? 0}
+      totalUsed={totalUsed}
+      history={(history ?? []) as CreditTransactionRow[]}
+      projects={(projects ?? []) as ProjectRow[]}
+    />
+  );
 }
