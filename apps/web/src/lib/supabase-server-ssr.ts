@@ -8,11 +8,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 type TypedSupabaseClient = SupabaseClient<any, any, any, any, any>;
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
 export async function supaServer(): Promise<TypedSupabaseClient> {
   const cookieStore = await cookies();
   const hdrs = await headers();
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   const cookieMethods: CookieMethodsServerDeprecated = {
     get(name) {
@@ -40,7 +41,7 @@ export async function supaServer(): Promise<TypedSupabaseClient> {
     },
   };
 
-  return createServerClient(url, anon, {
+  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: cookieMethods,
     global: {
       headers: {
@@ -51,7 +52,27 @@ export async function supaServer(): Promise<TypedSupabaseClient> {
 }
 
 export async function getServerUser() {
-  const sb = await supaServer();
+  const cookieStore = await cookies();
+  const hdrs = await headers();
+
+  const sb = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    cookies: {
+      get(name) {
+        return cookieStore.get(name)?.value ?? null;
+      },
+      set() {
+        // No-op to avoid "Cookies can only be modified" errors in server components.
+      },
+      remove() {
+        // No-op to avoid "Cookies can only be modified" errors in server components.
+      },
+    },
+    global: {
+      headers: {
+        "x-forwarded-for": hdrs.get("x-forwarded-for") ?? "",
+      },
+    },
+  });
   const {
     data: { user },
   } = await sb.auth.getUser();
