@@ -3,24 +3,30 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { SOURCE_VALUES, PURPOSE_VALUES } from "@/lib/onboarding-options";
 import { supaServer } from "@/lib/supabase-server-ssr";
 
 const Payload = z.object({
   answers: z.object({
     usage_type: z.enum(["personal", "team"]),
-    purpose: z.enum(PURPOSE_VALUES),
+    purpose: z.string().min(1),
     business_type: z.string().min(1),
-    ref_source: z.enum(SOURCE_VALUES),
+    ref_source: z.string().min(1),
     other_note: z.string().optional(),
   }),
 });
 
 export async function POST(req: Request) {
   const sb = await supaServer();
+
   const {
     data: { user },
+    error: userErr,
   } = await sb.auth.getUser();
+
+  if (userErr) {
+    console.error("[onboarding/save] getUser error:", userErr);
+  }
+
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -41,6 +47,7 @@ export async function POST(req: Request) {
     .eq("user_id", user.id);
 
   if (error) {
+    console.error("[onboarding/save] update error:", error);
     return NextResponse.json({ error: "DB_ERROR" }, { status: 500 });
   }
 
