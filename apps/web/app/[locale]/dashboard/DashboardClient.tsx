@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -67,23 +68,24 @@ export default function DashboardClient({
   projects: Project[];
   userId: string;
 }) {
-  const sb = supabaseBrowser;
+  const router = useRouter();
+  const supabase = supabaseBrowser;
+
   const [profile, setProfile] = useState<Profile>(initialProfile);
   const [jobsThisWeek] = useState(initialJobs);
   const [totalUsed, setTotalUsed] = useState(initialUsed);
   const [history, setHistory] = useState<TX[]>(initialHistory);
   const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [showOnboarding, setShowOnboarding] = useState(
-    !initialProfile?.onboarding_completed
-  );
 
   useEffect(() => {
     setProfile(initialProfile);
   }, [initialProfile]);
 
-  useEffect(() => {
-    setShowOnboarding(!profile?.onboarding_completed);
-  }, [profile?.onboarding_completed]);
+  const [showOnboarding, setShowOnboarding] = useState(!profile?.onboarding_completed);
+  useEffect(
+    () => setShowOnboarding(!profile?.onboarding_completed),
+    [profile?.onboarding_completed]
+  );
 
   const topupHref = useMemo(
     () => (`/${locale}/billing/topup` as Route),
@@ -95,7 +97,7 @@ export default function DashboardClient({
   );
 
   useEffect(() => {
-    const channel = sb
+    const channel = supabase
       .channel("realtime-dashboard")
       .on(
         "postgres_changes",
@@ -138,7 +140,7 @@ export default function DashboardClient({
           filter: `user_id=eq.${userId}`,
         },
         async () => {
-          const { data } = await sb
+          const { data } = await supabase
             .from("projects")
             .select("id, title, cover_url, updated_at")
             .eq("user_id", userId)
@@ -152,18 +154,11 @@ export default function DashboardClient({
       .subscribe();
 
     return () => {
-      void sb.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
-  }, [sb, userId]);
+  }, [supabase, userId]);
 
   const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
-  const planLabel = useMemo(() => {
-    const value = profile?.plan?.toLowerCase();
-    if (value === "pro") return "Pro Plan";
-    if (value === "basic") return "Basic Plan";
-    if (value) return `${value.charAt(0).toUpperCase()}${value.slice(1)} Plan`;
-    return "Free Plan";
-  }, [profile?.plan]);
 
   const daysLeft = useMemo(() => {
     if (!profile?.trial_expires_at) return 0;
@@ -192,7 +187,7 @@ export default function DashboardClient({
       {right ? <div className="absolute right-4 top-4">{right}</div> : null}
       <div className="text-sm text-gray-400">{title}</div>
       <div className="mt-2 text-5xl font-extrabold tracking-tight text-white">{value}</div>
-      {desc ? <div className="mt-3 text-xs text-gray-400">{desc}</div> : null}
+      {desc ? <div className="mt-3 text-xs text-gray-400 space-y-1">{desc}</div> : null}
       <div className="pointer-events-none absolute -top-24 -right-20 h-48 w-48 rounded-full bg-white/5 blur-2xl" />
     </motion.div>
   );
@@ -239,13 +234,7 @@ export default function DashboardClient({
         <OnboardingModal
           open
           onClose={() => setShowOnboarding(false)}
-          initial={{
-            usage_type: profile?.onboarding_answers?.usage_type ?? "personal",
-            purpose: profile?.onboarding_answers?.purpose ?? "",
-            business_type: profile?.onboarding_answers?.business_type ?? "",
-            ref_source: profile?.onboarding_answers?.ref_source ?? "",
-            other_note: profile?.onboarding_answers?.other_note,
-          }}
+          initial={profile?.onboarding_answers ?? {}}
           onSubmit={async (answers: OnboardingAnswers) => {
             await fetch("/api/profile/onboarding/save", {
               method: "POST",
@@ -262,6 +251,7 @@ export default function DashboardClient({
                 : prev
             );
             setShowOnboarding(false);
+            router.refresh();
           }}
         />
       )}
@@ -280,14 +270,11 @@ export default function DashboardClient({
           title="Kredit aktif"
           value={numberFormatter.format(profile?.credits ?? 0)}
           desc={
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="rounded-full bg-blue-900/40 px-2 py-1 text-[11px] font-semibold text-blue-200">
-                {planLabel}
-              </span>
-              <span className="rounded-full bg-[#0B1220] px-3 py-1 text-[11px] font-semibold text-gray-300">
-                FREE CREDITS {numberFormatter.format(profile?.trial_credits ?? 0)} · {daysLeft} Days Left
-              </span>
-            </div>
+            <>
+              <p>Plan: from {profile?.plan ?? "free"}</p>
+              <p>Free credits: {numberFormatter.format(profile?.trial_credits ?? 0)}</p>
+              <p>Days left: {daysLeft}</p>
+            </>
           }
         />
         <StatCard
