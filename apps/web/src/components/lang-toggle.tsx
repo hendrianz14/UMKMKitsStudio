@@ -35,6 +35,8 @@ function buildTargetHref(pathname: string | null | undefined, locale: Locale) {
         return href('/[locale]/dashboard', locale);
       case 'gallery':
         return href('/[locale]/gallery', locale);
+      case 'caption-ai':
+        return href('/[locale]/caption-ai', locale);
       case 'forgot-password':
         return href('/[locale]/forgot-password', locale);
       case 'sign-in':

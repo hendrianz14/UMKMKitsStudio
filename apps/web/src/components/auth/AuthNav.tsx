@@ -40,9 +40,11 @@ export default function AuthNav({
   const fallback = defaultLocale;
   const finalLocale: Locale = activeLocale ?? fallback;
   const dashboardHref = useMemo(() => href("/[locale]/dashboard", finalLocale), [finalLocale]);
+  const captionHref = useMemo(() => href("/[locale]/caption-ai", finalLocale), [finalLocale]);
   const signInHref = useMemo(() => href("/[locale]/sign-in", finalLocale), [finalLocale]);
   const signUpHref = useMemo(() => href("/[locale]/sign-up", finalLocale), [finalLocale]);
   const dashboardPathname = `/${finalLocale}/dashboard`;
+  const captionPathname = `/${finalLocale}/caption-ai`;
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +102,15 @@ export default function AuthNav({
     <div className={cn(containerClasses, className)}>
       {isLoggedIn ? (
         <>
+          {pathname !== captionPathname && (
+            <Link
+              href={captionHref}
+              className={cn(actionBaseClass, "bg-card/30 border border-border hover:bg-card/50")}
+              onClick={handleNavigate}
+            >
+              Caption AI
+            </Link>
+          )}
           {pathname !== dashboardPathname && (
             <Link
               href={dashboardHref}

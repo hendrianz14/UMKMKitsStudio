@@ -34,7 +34,15 @@ Monorepo untuk platform kreatif UMKM Kits Studio. Struktur ini terdiri atas apli
    cp apps/web/.env.example apps/web/.env.local
    ```
 
-   Buka `apps/web/.env.local` kemudian isi seluruh variabel dengan kredensial Supabase, SMTP, dan URL aplikasi Anda sebelum menjalankan secara lokal maupun produksi.
+   Buka `apps/web/.env.local` kemudian isi seluruh variabel dengan kredensial Supabase, SMTP, dan URL aplikasi Anda sebelum menjalankan secara lokal maupun produksi. Tambahkan pula konfigurasi integrasi n8n berikut untuk mengaktifkan halaman Caption AI:
+
+   ```bash
+   N8N_CAPTION_WEBHOOK_URL="https://workflow.example.com/webhook/ai-caption"
+   N8N_CAPTION_WEBHOOK_TOKEN="token-opsional-jika-diperlukan"
+   N8N_CALLBACK_SECRET="secret-yang-sama-di-n8n"
+   ```
+
+   Jika variabel di atas tidak diisi, generator akan menggunakan data mock sehingga pengujian UI tetap dapat dilakukan.
 
 3. **Buat tabel OTP di Supabase**
 
@@ -69,6 +77,7 @@ Monorepo untuk platform kreatif UMKM Kits Studio. Struktur ini terdiri atas apli
 - Guard environment disediakan lewat pengecekan variabel sebelum inisialisasi klien Supabase.
 - Rate limiting berbasis token bucket in-memory tersedia dengan opsi Redis.
 - Workflow n8n mencakup contoh job caption dan callback aman.
+- Halaman `/[locale]/caption-ai` menyediakan form generator caption profesional lengkap dengan preset strategi dan riwayat job yang terhubung ke n8n.
 
 ## Lisensi
 
