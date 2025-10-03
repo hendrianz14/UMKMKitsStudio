@@ -4,21 +4,49 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "ai-job",
+        "path": "ai-caption",
         "options": {
-          "responseData": "{\"status\":\"queued\"}"
+          "responseData": "{\"status\":\"queued\",\"message\":\"Caption request accepted\"}"
         }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [260, 300],
-      "webhookId": "ai-job"
+      "position": [220, 300],
+      "webhookId": "ai-caption",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "const incoming = $json;\nconst options = incoming.options ?? {};\nconst prompt = [`You are an Indonesian social media strategist for culinary brands.`,\n  `Platform: ${options.platform}`,\n  `Tone: ${options.tone}`,\n  `Language: ${options.language}`,\n  `Audience: ${options.audience ?? 'General food lovers'}`,\n  `Differentiator: ${options.differentiator ?? 'Highlight artisan ingredients'}`,\n  `Brief: ${options.brief}`\n].join('\n');\nreturn [{\n  jobId: incoming.jobId,\n  callbackUrl: incoming.callbackUrl,\n  options,\n  prompt\n}];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [520, 300],
+      "name": "Compose Prompt"
+    },
+    {
+      "parameters": {
+        "functionCode": "const { options, prompt, jobId, callbackUrl } = $json;\nconst variations = Array.from({ length: options.variations ?? 3 }).map((_, index) => {\n  const base = options.brief || 'Produk baru UMKM Anda';\n  const tone = options.tone ?? 'professional';\n  const mood = options.includeEmoji ? '✨ ' : '';\n  return {\n    id: `${jobId}-${index + 1}`,\n    caption: `${mood}${base} — versi ${index + 1} dengan tone ${tone}. Tekankan bahan lokal dan ajak audiens mencoba sekarang.`,\n    tone\n  };\n});\nconst hashtags = options.includeHashtags\n  ? (options.customHashtags ? options.customHashtags.split(/[,#\n]+/).filter(Boolean).map((tag) => `#${tag.replace(/\s+/g, '')}`) : ['#umkm', '#kulinerkreatif'])\n  : [];\nreturn [{\n  jobId,\n  callbackUrl,\n  options,\n  prompt,\n  variations,\n  hashtags,\n  insights: {\n    hook: 'Mulai dengan pertanyaan reflektif tentang kebutuhan pelanggan.',\n    story: 'Soroti proses produksi handmade dan keunggulan bahan lokal.',\n    closing: options.includeCTA ? (options.customCTA || 'Arahkan audiens ke tautan pemesanan dengan CTA jelas.') : 'Tambahkan CTA ketika siap mengarahkan aksi.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [780, 300],
+      "name": "Generate Variations"
+    },
+    {
+      "parameters": {
+        "functionCode": "const item = $json;\nreturn [{\n  jobId: item.jobId,\n  status: 'succeeded',\n  callbackUrl: item.callbackUrl,\n  resultUrl: null,\n  meta: { ...item.options, prompt: item.prompt },\n  insights: item.insights,\n  variations: item.variations,\n  hashtags: item.hashtags,\n  primary: item.variations?.[0]?.caption ?? null\n}];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1020, 300],
+      "name": "Format Payload"
     },
     {
       "parameters": {
         "authentication": "none",
         "requestMethod": "POST",
-        "url": "={{$json[\"callbackUrl\"]}}",
+        "url": "={{$json.callbackUrl}}",
         "jsonParameters": true,
         "options": {
           "headers": {
@@ -30,14 +58,58 @@
             ]
           }
         },
-        "bodyParametersJson": "={\n  \"jobId\": $json.jobId,\n  \"status\": \"succeeded\",\n  \"resultUrl\": $json.resultUrl,\n  \"meta\": $json.meta\n}"
+        "bodyParametersJson": "={\n  \"jobId\": $json.jobId,\n  \"status\": $json.status,\n  \"resultUrl\": $json.resultUrl,\n  \"meta\": $json.meta,\n  \"insights\": $json.insights,\n  \"variations\": $json.variations,\n  \"hashtags\": $json.hashtags,\n  \"primary\": $json.primary\n}"
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [740, 300]
+      "position": [1280, 300],
+      "name": "Send Callback"
     }
   ],
   "connections": {
-    "UMKM Caption Job Start": {}
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Compose Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate Variations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Variations": {
+      "main": [
+        [
+          {
+            "node": "Format Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Payload": {
+      "main": [
+        [
+          {
+            "node": "Send Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   }
 }

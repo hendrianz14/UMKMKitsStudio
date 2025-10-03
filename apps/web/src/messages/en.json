@@ -18,5 +18,76 @@
     "welcome": "Welcome back",
     "upload": "Upload your product photo",
     "recentJobs": "Recent AI jobs"
+  },
+  "captionAi": {
+    "title": "Professional caption studio",
+    "subtitle": "Craft omnichannel captions with precise tone, CTA and hashtag controls. Pipe every request through the secure n8n workflow.",
+    "capabilities": {
+      "pipelines": "Automated n8n pipelines with secure callback",
+      "templates": "Battle-tested F&B campaign presets",
+      "custom": "Deep customization for tone, CTA and hashtags"
+    },
+    "form": {
+      "title": "Design your caption strategy",
+      "subtitle": "Describe the campaign so the generator can tailor copy to your brand audience.",
+      "platform": "Platform",
+      "tone": "Tone of voice",
+      "language": "Content language",
+      "length": "Caption length",
+      "variationLabel": "Number of variations",
+      "variations": "{count} variations",
+      "variationHint": "Up to 5 variations per request",
+      "characters": "{range} characters",
+      "brief": "Creative brief",
+      "audience": "Primary audience",
+      "brandVoice": "Brand voice",
+      "keywords": "Key keywords",
+      "competitorAngles": "Competitor angles",
+      "includeHashtags": "Include hashtags",
+      "includeHashtagsHint": "Generator will craft or merge your custom hashtags",
+      "includeCTA": "Enable CTA",
+      "includeCTAHint": "Add a specific action for the audience",
+      "includeEmoji": "Dynamic emojis",
+      "includeEmojiHint": "Align caption mood with emojis",
+      "customHashtags": "Custom hashtags",
+      "customCTA": "Custom CTA"
+    },
+    "placeholders": {
+      "brief": "Example: soft launch a seasonal drink with morning bundle promo",
+      "audience": "E.g. young urban professionals active on Instagram",
+      "brandVoice": "E.g. optimistic, warm, celebrates local ingredients",
+      "keywords": "Separate by commas or new lines",
+      "competitorAngles": "List how you differentiate from competitors",
+      "hashtags": "Add specific hashtags if needed",
+      "cta": "E.g. Order via WhatsApp or tap link in bio"
+    },
+    "actions": {
+      "generate": "Generate caption",
+      "generating": "Connecting to n8n...",
+      "clear": "Clear brief"
+    },
+    "output": {
+      "title": "Caption output",
+      "subtitle": "Copy your favourite variation or save it as a campaign draft.",
+      "variant": "Variation",
+      "copy": "Copy",
+      "insightsTitle": "Execution insights",
+      "prompt": "Prompt",
+      "emptyState": "No caption yet. Start by filling the brief on the left."
+    },
+    "presets": {
+      "title": "Strategy presets",
+      "subtitle": "Kickstart faster with proven UMKM campaign ideas."
+    },
+    "history": {
+      "title": "Job history",
+      "subtitle": "Track caption jobs executed through n8n.",
+      "viewWorkflow": "Open workflow",
+      "empty": "No caption jobs yet. Generate your first caption!"
+    },
+    "errors": {
+      "general": "Something went wrong: {message}",
+      "emptyBrief": "Brief cannot be empty."
+    }
   }
 }

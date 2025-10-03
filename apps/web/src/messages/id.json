@@ -18,5 +18,76 @@
     "welcome": "Selamat datang kembali",
     "upload": "Unggah foto produk Anda",
     "recentJobs": "Riwayat Job AI"
+  },
+  "captionAi": {
+    "title": "Caption AI profesional",
+    "subtitle": "Bangun caption untuk kampanye omnichannel dengan kontrol tone, CTA, dan hashtag yang presisi. Hubungkan langsung ke workflow n8n untuk proses kreatif yang konsisten.",
+    "capabilities": {
+      "pipelines": "Workflow n8n otomatis dengan callback aman",
+      "templates": "Preset kampanye F&B yang siap pakai",
+      "custom": "Kustomisasi tone, CTA, dan hashtag mendalam"
+    },
+    "form": {
+      "title": "Atur strategi caption",
+      "subtitle": "Detailkan kampanye Anda agar generator AI kami dapat menyusun caption yang relevan untuk audiens brand.",
+      "platform": "Platform",
+      "tone": "Tone komunikasi",
+      "language": "Bahasa konten",
+      "length": "Panjang caption",
+      "variationLabel": "Jumlah variasi",
+      "variations": "{count} variasi",
+      "variationHint": "Maksimal 5 variasi per request",
+      "characters": "{range} karakter",
+      "brief": "Creative brief",
+      "audience": "Audiens utama",
+      "brandVoice": "Suara brand",
+      "keywords": "Keyword utama",
+      "competitorAngles": "Angle kompetitor",
+      "includeHashtags": "Sertakan hashtag",
+      "includeHashtagsHint": "Generator akan membuat hashtag relevan atau gunakan kustom",
+      "includeCTA": "Aktifkan CTA",
+      "includeCTAHint": "Tambahkan ajakan aksi spesifik sesuai kampanye",
+      "includeEmoji": "Emoji dinamis",
+      "includeEmojiHint": "Sesuaikan mood caption dengan emoji",
+      "customHashtags": "Hashtag kustom",
+      "customCTA": "CTA kustom"
+    },
+    "placeholders": {
+      "brief": "Contoh: soft launching menu baru dengan promo bundling pagi",
+      "audience": "Misal: pekerja muda urban yang aktif di Instagram",
+      "brandVoice": "Misal: optimis, hangat, mengutamakan bahan lokal",
+      "keywords": "Pisahkan dengan koma atau baris baru",
+      "competitorAngles": "Cantumkan diferensiasi utama",
+      "hashtags": "Tuliskan hashtag khusus bila diperlukan",
+      "cta": "Misal: Pesan lewat WhatsApp atau klik link di bio"
+    },
+    "actions": {
+      "generate": "Generate caption",
+      "generating": "Menghubungkan ke n8n...",
+      "clear": "Bersihkan brief"
+    },
+    "output": {
+      "title": "Hasil caption",
+      "subtitle": "Salin caption terbaik atau simpan sebagai draft kampanye.",
+      "variant": "Variasi",
+      "copy": "Salin",
+      "insightsTitle": "Insight eksekusi",
+      "prompt": "Prompt",
+      "emptyState": "Belum ada caption. Mulai dengan mengisi brief di kiri."
+    },
+    "presets": {
+      "title": "Preset strategi",
+      "subtitle": "Gunakan inspirasi kampanye populer UMKM untuk mulai lebih cepat."
+    },
+    "history": {
+      "title": "Riwayat job",
+      "subtitle": "Pantau status job caption yang dikirim ke n8n.",
+      "viewWorkflow": "Lihat workflow",
+      "empty": "Belum ada riwayat job caption. Generate caption pertama Anda!"
+    },
+    "errors": {
+      "general": "Terjadi kesalahan: {message}",
+      "emptyBrief": "Brief tidak boleh kosong."
+    }
   }
 }

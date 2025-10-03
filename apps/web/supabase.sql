@@ -77,9 +77,14 @@ create table if not exists public.ai_jobs (
   user_id uuid not null references auth.users(id) on delete cascade,
   job_type text not null,
   status text not null default 'done',
+  result_url text,
+  meta jsonb,
   created_at timestamptz not null default now()
 );
 create index if not exists idx_jobs_user_created on public.ai_jobs(user_id, created_at desc);
+
+alter table public.ai_jobs add column if not exists result_url text;
+alter table public.ai_jobs add column if not exists meta jsonb;
 
 alter table public.profiles enable row level security;
 alter table public.credit_transactions enable row level security;
