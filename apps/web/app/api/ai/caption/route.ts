@@ -168,7 +168,7 @@ export async function POST(req: Request) {
 
   const status = (effectiveResponse.status as string | undefined) ?? (n8nError ? "failed" : "succeeded");
 
-  await sb
+  const { error: insertError } = await sb
     .from("ai_jobs")
     .insert({
       id: jobId,
@@ -181,10 +181,11 @@ export async function POST(req: Request) {
         webhookError: n8nError,
       },
       result_url: effectiveResponse.resultUrl ?? null,
-    })
-    .catch((error: unknown) => {
-      console.warn("[caption-ai] Failed to record ai_jobs", error);
     });
+
+  if (insertError) {
+    console.warn("[caption-ai] Failed to record ai_jobs", insertError);
+  }
 
   return NextResponse.json({
     jobId,

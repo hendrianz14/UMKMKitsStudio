@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
   const admin = supaAdmin();
 
-  await admin
+  const { error: updateError } = await admin
     .from("ai_jobs")
     .update({
       status: parsed.data.status,
@@ -47,10 +47,12 @@ export async function POST(req: Request) {
         primary: parsed.data.primary ?? null,
       },
     })
-    .eq("id", parsed.data.jobId)
-    .catch((error: unknown) => {
-      console.error("[caption-ai] Failed to update job from callback", error);
-    });
+    .eq("id", parsed.data.jobId);
+
+  if (updateError) {
+    console.error("[caption-ai] Failed to update job from callback", updateError);
+    return NextResponse.json({ error: "UPDATE_FAILED" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }

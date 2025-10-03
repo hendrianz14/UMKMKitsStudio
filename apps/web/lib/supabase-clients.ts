@@ -1,14 +1,17 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
     "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables"
   );
 }
+
+const SUPABASE_URL = supabaseUrl;
+const SUPABASE_ANON_KEY = supabaseAnonKey;
 
 export type SupabaseServerAccess = "readonly" | "readwrite";
 
@@ -71,16 +74,16 @@ export function supaServer(
   access: SupabaseServerAccess = "readonly"
 ): SupabaseServerClient {
   const { cookies: cookieStore, headers: headerStore } = resolveRequestStores();
-  const cookies = createCookieAdapter(cookieStore as CookieStore, access);
+  const cookies = createCookieAdapter(cookieStore as unknown as CookieStore, access);
 
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies,
     global: {
       headers: {
-        "x-forwarded-for": (headerStore as HeaderStore).get("x-forwarded-for") ?? "",
+        "x-forwarded-for": (headerStore as unknown as HeaderStore).get("x-forwarded-for") ?? "",
       },
     },
-  }) as SupabaseServerClient;
+  }) as unknown as SupabaseServerClient;
 }
 
 declare global {

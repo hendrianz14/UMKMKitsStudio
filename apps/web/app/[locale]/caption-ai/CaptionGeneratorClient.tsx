@@ -49,6 +49,7 @@ type CaptionResult = {
     promptUsed?: string;
   } | null;
   meta?: Record<string, any> | null;
+  resultUrl?: string | null;
 };
 
 type CaptionGeneratorClientProps = {
